@@ -1,0 +1,53 @@
+spring:
+    datasource:
+        url: jdbc:postgresql://localhost:5432/jochat
+        username: postgres
+        password: jomart
+        driver-class-name: org.postgresql.Driver
+
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: false
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.PostgreSQLDialect
+
+    data:
+        redis:
+            host: localhost
+            port: 6379
+            timeout: 60000ms
+
+    mail:
+        host: smtp.gmail.com
+        port: 587
+        username: aldabaizhomart@gmail.com
+        password: maomjsurpkiioqvo
+        properties:
+            mail:
+                smtp:
+                    auth: true
+                    starttls:
+                        enable: true
+
+    servlet:
+        multipart:
+            max-file-size: 10MB
+            max-request-size: 10MB
+
+server:
+    port: 8080
+
+app:
+    jwt:
+        secret: jochat-super-secret-key-2024-minimum-256-bits-long-xxx
+        expiration: 86400000
+        refresh-expiration: 604800000
+    otp:
+        expiration: 300
+    upload:
+        path: ./uploads
+    frontend-url: http://localhost:3000
+    gemini:
+        api-key: AIzaSyAtkVfLhEP3unVYvhdIeLTZRuvJlcroTRU
