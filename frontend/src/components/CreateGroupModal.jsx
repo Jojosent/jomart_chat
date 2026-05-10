@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { createGroup } from '../api/group'
 import { searchUsers } from '../api/user'
+import { X, Users, Search, Check, ArrowRight } from 'lucide-react'
+
 
 export default function CreateGroupModal({ onClose, onCreate }) {
     const [step, setStep] = useState('info')  // 'info' | 'members'
@@ -58,7 +60,7 @@ export default function CreateGroupModal({ onClose, onCreate }) {
                     <span style={styles.title}>
                         {step === 'info' ? '👥 Новая группа' : '➕ Добавить участников'}
                     </span>
-                    <button style={styles.closeBtn} onClick={onClose}>✕</button>
+                    <button style={styles.closeBtn} onClick={onClose}><X size={14} /></button>
                 </div>
 
                 {error && <div style={styles.error}>{error}</div>}
@@ -207,6 +209,7 @@ const styles = {
         background: '#2d2d4e', border: 'none',
         color: '#888', borderRadius: '8px',
         width: '32px', height: '32px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
         cursor: 'pointer', fontSize: '14px',
     },
     body: {

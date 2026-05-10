@@ -44,8 +44,8 @@ function App() {
                     <ProtectedRoute><GroupSettingsPage /></ProtectedRoute>
                 } />
                 <Route path="/ai" element={
-  <ProtectedRoute><AiChatPage /></ProtectedRoute>
-} />
+                    <ProtectedRoute><AiChatPage /></ProtectedRoute>
+                } />
             </Routes>
         </BrowserRouter>
     )

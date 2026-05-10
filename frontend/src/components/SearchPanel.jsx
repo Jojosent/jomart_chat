@@ -1,324 +1,194 @@
 import { useState, useEffect, useRef } from 'react'
 import { searchUsers } from '../api/user'
 import { getOrCreatePrivate } from '../api/chat'
+import { Search, MessageSquare, X } from 'lucide-react'
 
-export default function SearchPanel({ onChatOpen, onClose }) {
+export function SearchPanel({ onChatOpen, onClose }) {
     const [query, setQuery] = useState('')
     const [results, setResults] = useState([])
     const [loading, setLoading] = useState(false)
     const [selected, setSelected] = useState(null)
     const inputRef = useRef()
 
+    useEffect(() => { inputRef.current?.focus() }, [])
     useEffect(() => {
-        inputRef.current?.focus()
-    }, [])
-
-    useEffect(() => {
-        if (query.trim().length < 2) {
-            setResults([])
-            setSelected(null)
-            return
-        }
-        const timer = setTimeout(() => doSearch(query), 400)
-        return () => clearTimeout(timer)
+        if (query.trim().length < 2) { setResults([]); setSelected(null); return }
+        const t = setTimeout(() => doSearch(query), 400)
+        return () => clearTimeout(t)
     }, [query])
 
     const doSearch = async (q) => {
         setLoading(true)
-        try {
-            const res = await searchUsers(q)
-            setResults(res.data)
-        } catch {
-            setResults([])
-        } finally {
-            setLoading(false)
-        }
+        try { const res = await searchUsers(q); setResults(res.data) }
+        catch { setResults([]) }
+        finally { setLoading(false) }
     }
 
     const handleOpenChat = async (user) => {
         try {
             const res = await getOrCreatePrivate(user.id)
-            onChatOpen(res.data)
-            onClose()
-        } catch (err) {
-            console.error('Failed to open chat:', err)
-        }
-    }
-
-    const handleSelectUser = (user) => {
-        setSelected(selected?.id === user.id ? null : user)
+            onChatOpen(res.data); onClose()
+        } catch (e) { console.error(e) }
     }
 
     return (
-        <div style={styles.container}>
-
-            {/* Поисковая строка */}
-            <div style={styles.searchBar}>
-                <span style={styles.searchIcon}>🔍</span>
+        <div style={sp.wrap}>
+            {/* Search input */}
+            <div style={sp.inputRow}>
+                <Search size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
                 <input
                     ref={inputRef}
-                    style={styles.input}
+                    style={sp.input}
                     value={query}
                     onChange={e => setQuery(e.target.value)}
-                    placeholder="Поиск по имени или @username..."
+                    placeholder="Search by name or @username..."
                 />
                 {query && (
-                    <button style={styles.clearBtn} onClick={() => setQuery('')}>
-                        ✕
+                    <button style={sp.clearBtn} onClick={() => setQuery('')}>
+                        <X size={13} />
                     </button>
                 )}
             </div>
 
-            {/* Результаты */}
-            <div style={styles.results}>
+            {/* Results */}
+            <div style={sp.results}>
                 {loading && (
-                    <div style={styles.statusMsg}>
-                        <span style={styles.loadingDots}>Поиск</span>
+                    <div style={sp.state}>
+                        <div style={sp.spinner} />
+                        <span style={sp.stateText}>Searching...</span>
                     </div>
                 )}
-
-                {!loading && query.length >= 2 && results.length === 0 && (
-                    <div style={styles.statusMsg}>
-                        <div style={styles.emptyIcon}>👤</div>
-                        <div style={styles.emptyText}>Пользователи не найдены</div>
-                        <div style={styles.emptyHint}>Попробуйте другой запрос</div>
-                    </div>
-                )}
-
-                {!loading && query.length < 2 && query.length > 0 && (
-                    <div style={styles.statusMsg}>
-                        <div style={styles.hintText}>Введите минимум 2 символа</div>
-                    </div>
-                )}
-
                 {!loading && query.length === 0 && (
-                    <div style={styles.statusMsg}>
-                        <div style={styles.emptyIcon}>🔍</div>
-                        <div style={styles.emptyText}>Найдите пользователей</div>
-                        <div style={styles.emptyHint}>Введите имя или @username</div>
+                    <div style={sp.state}>
+                        <div style={sp.stateIconWrap}>
+                            <Search size={18} color="var(--text-muted)" />
+                        </div>
+                        <p style={sp.stateTitle}>Find people</p>
+                        <p style={sp.stateHint}>Enter at least 2 characters</p>
+                    </div>
+                )}
+                {!loading && query.length >= 2 && results.length === 0 && (
+                    <div style={sp.state}>
+                        <div style={sp.stateIconWrap}>
+                            <Search size={18} color="var(--text-muted)" />
+                        </div>
+                        <p style={sp.stateTitle}>No results</p>
+                        <p style={sp.stateHint}>Try a different name or username</p>
                     </div>
                 )}
 
-                {/* Список пользователей */}
-                {results.map(user => {
-                    const isSelected = selected?.id === user.id
-                    const letter = user.fullName?.charAt(0)?.toUpperCase() || '?'
-
-                    return (
-                        <div key={user.id}>
-                            {/* Строка пользователя */}
-                            <div
-                                style={{
-                                    ...styles.userRow,
-                                    background: isSelected ? '#1e1e3a' : 'transparent',
-                                }}
-                                onClick={() => handleSelectUser(user)}
-                            >
-                                {/* Аватар */}
-                                {user.avatarUrl ? (
-                                    <img src={user.avatarUrl} style={styles.avatar} alt="" />
-                                ) : (
-                                    <div style={styles.avatarPlaceholder}>{letter}</div>
-                                )}
-
-                                {/* Инфо */}
-                                <div style={styles.userInfo}>
-                                    <div style={styles.userName}>{user.fullName}</div>
-                                    <div style={styles.userMeta}>
-                                        <span style={styles.userHandle}>@{user.username}</span>
-                                        {user.bio && (
-                                            <span style={styles.userBio}> · {user.bio}</span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Статус онлайн */}
-                                <div style={{
-                                    ...styles.statusDot,
-                                    background: user.status === 'ONLINE' ? '#4ade80' : '#555',
-                                }} />
-                            </div>
-
-                            {/* Раскрытая карточка */}
-                            {isSelected && (
-                                <div style={styles.expandedCard}>
-                                    <div style={styles.expandedInfo}>
-                                        {user.avatarUrl ? (
-                                            <img src={user.avatarUrl} style={styles.expandedAvatar} alt="" />
-                                        ) : (
-                                            <div style={styles.expandedAvatarPlaceholder}>{letter}</div>
-                                        )}
-                                        <div>
-                                            <div style={styles.expandedName}>{user.fullName}</div>
-                                            <div style={styles.expandedHandle}>@{user.username}</div>
-                                            {user.bio && (
-                                                <div style={styles.expandedBio}>{user.bio}</div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div style={styles.expandedActions}>
-                                        <button
-                                            style={styles.messageBtn}
-                                            onClick={() => handleOpenChat(user)}
-                                        >
-                                            💬 Написать сообщение
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
+                {results.map(user => (
+                    <div key={user.id} style={sp.userRow}>
+                        {/* Avatar */}
+                        <div style={sp.avatarWrap}>
+                            {user.avatarUrl
+                                ? <img src={user.avatarUrl} style={sp.avatar} alt="" />
+                                : <div style={sp.avatarPh}>{user.fullName?.charAt(0)}</div>
+                            }
+                            <div style={{
+                                ...sp.statusDot,
+                                background: user.status === 'ONLINE' ? 'var(--online)' : 'var(--offline)',
+                                boxShadow: user.status === 'ONLINE' ? '0 0 6px var(--online)' : 'none',
+                            }} />
                         </div>
-                    )
-                })}
+
+                        {/* Info */}
+                        <div style={sp.userInfo}>
+                            <span style={sp.userName}>{user.fullName}</span>
+                            <span style={sp.userHandle}>@{user.username}</span>
+                            {user.bio && <span style={sp.userBio}>{user.bio}</span>}
+                        </div>
+
+                        {/* Message btn */}
+                        <button style={sp.msgBtn} onClick={() => handleOpenChat(user)}>
+                            <MessageSquare size={14} />
+                            Message
+                        </button>
+                    </div>
+                ))}
             </div>
         </div>
     )
 }
 
-const styles = {
-    container: {
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        fontFamily: "'Segoe UI', sans-serif",
+const sp = {
+    wrap: { display: 'flex', flexDirection: 'column', height: '100%' },
+    inputRow: {
+        display: 'flex', alignItems: 'center', gap: '8px',
+        padding: '10px 12px',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--bg-tertiary)',
     },
-    searchBar: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '12px 16px',
-        borderBottom: '1px solid #2d2d4e',
-        background: '#13132b',
-    },
-    searchIcon: { fontSize: '16px', flexShrink: 0 },
     input: {
-        flex: 1,
-        background: 'transparent',
-        border: 'none',
-        outline: 'none',
-        color: '#fff',
-        fontSize: '15px',
-        fontFamily: "'Segoe UI', sans-serif",
+        flex: 1, background: 'transparent', border: 'none',
+        color: 'var(--text-primary)', fontSize: '13px',
+        outline: 'none', fontFamily: 'inherit',
     },
     clearBtn: {
-        background: 'transparent',
-        border: 'none',
-        color: '#555',
-        cursor: 'pointer',
-        fontSize: '14px',
-        padding: '2px 6px',
-        borderRadius: '50%',
-        flexShrink: 0,
+        background: 'transparent', border: 'none',
+        color: 'var(--text-muted)', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', padding: '2px',
     },
-    results: {
-        flex: 1,
-        overflowY: 'auto',
+    results: { flex: 1, overflowY: 'auto' },
+    state: {
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        padding: '40px 20px', gap: '8px',
     },
-    statusMsg: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '48px 20px',
-        gap: '10px',
+    spinner: {
+        width: '20px', height: '20px',
+        border: '2px solid var(--border)',
+        borderTop: '2px solid var(--accent)',
+        borderRadius: '50%', animation: 'spin 0.7s linear infinite',
     },
-    emptyIcon: { fontSize: '40px', opacity: 0.3 },
-    emptyText: { color: '#666', fontSize: '15px', fontWeight: '600' },
-    emptyHint: { color: '#444', fontSize: '13px' },
-    hintText: { color: '#555', fontSize: '13px' },
-    loadingDots: { color: '#7c6af7', fontSize: '14px' },
-
+    stateText: { fontSize: '13px', color: 'var(--text-muted)' },
+    stateIconWrap: {
+        width: '44px', height: '44px', borderRadius: '12px',
+        background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px',
+    },
+    stateTitle: { fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)' },
+    stateHint: { fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' },
     userRow: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '12px 16px',
-        cursor: 'pointer',
-        borderBottom: '1px solid #1e1e38',
-        transition: 'background 0.15s',
+        display: 'flex', alignItems: 'center', gap: '12px',
+        padding: '11px 14px', borderBottom: '1px solid var(--border)',
+        transition: 'background 0.12s',
     },
-    avatar: {
-        width: '46px', height: '46px',
-        borderRadius: '50%', objectFit: 'cover',
-        flexShrink: 0,
-    },
-    avatarPlaceholder: {
-        width: '46px', height: '46px',
-        borderRadius: '50%',
-        background: 'linear-gradient(135deg, #7c6af7, #a78bfa)',
+    avatarWrap: { position: 'relative', flexShrink: 0 },
+    avatar: { width: '42px', height: '42px', borderRadius: '13px', objectFit: 'cover' },
+    avatarPh: {
+        width: '42px', height: '42px', borderRadius: '13px',
+        background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '18px', fontWeight: '800', color: '#fff',
-        flexShrink: 0,
+        fontSize: '16px', fontWeight: '700', color: '#fff',
     },
-    userInfo: { flex: 1, minWidth: 0 },
+    statusDot: {
+        position: 'absolute', bottom: '0px', right: '0px',
+        width: '10px', height: '10px', borderRadius: '50%',
+        border: '2px solid var(--bg-secondary)',
+    },
+    userInfo: {
+        flex: 1, minWidth: 0,
+        display: 'flex', flexDirection: 'column', gap: '2px',
+    },
     userName: {
-        fontSize: '15px', fontWeight: '600', color: '#fff',
-        marginBottom: '3px',
+        fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)',
+        letterSpacing: '-0.01em',
     },
-    userMeta: {
-        fontSize: '13px', color: '#666',
+    userHandle: { fontSize: '12px', color: 'var(--accent-light)' },
+    userBio: {
+        fontSize: '12px', color: 'var(--text-muted)',
         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
     },
-    userHandle: { color: '#7c6af7' },
-    userBio: { color: '#555' },
-    statusDot: {
-        width: '10px', height: '10px',
-        borderRadius: '50%', flexShrink: 0,
-    },
-
-    // Раскрытая карточка
-    expandedCard: {
-        background: '#16163a',
-        borderBottom: '1px solid #2d2d4e',
-        padding: '16px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '14px',
-    },
-    expandedInfo: {
-        display: 'flex',
-        gap: '14px',
-        alignItems: 'flex-start',
-    },
-    expandedAvatar: {
-        width: '56px', height: '56px',
-        borderRadius: '50%', objectFit: 'cover',
-        border: '2px solid #7c6af7',
-    },
-    expandedAvatarPlaceholder: {
-        width: '56px', height: '56px',
-        borderRadius: '50%',
-        background: 'linear-gradient(135deg, #7c6af7, #a78bfa)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '22px', fontWeight: '800', color: '#fff',
-        border: '2px solid #7c6af7',
-        flexShrink: 0,
-    },
-    expandedName: {
-        fontSize: '17px', fontWeight: '700', color: '#fff',
-        marginBottom: '3px',
-    },
-    expandedHandle: {
-        fontSize: '13px', color: '#7c6af7',
-        marginBottom: '6px',
-    },
-    expandedBio: {
-        fontSize: '13px', color: '#888',
-        lineHeight: '1.5',
-    },
-    expandedActions: {
-        display: 'flex',
-        gap: '10px',
-    },
-    messageBtn: {
-        flex: 1,
-        background: '#7c6af7',
-        border: 'none',
-        color: '#fff',
-        borderRadius: '10px',
-        padding: '12px',
-        fontSize: '14px',
-        fontWeight: '700',
-        cursor: 'pointer',
+    msgBtn: {
+        display: 'flex', alignItems: 'center', gap: '5px',
+        background: 'var(--accent-bg)',
+        border: '1px solid var(--accent-bg-hover)',
+        borderRadius: '8px', padding: '7px 12px',
+        fontSize: '12px', fontWeight: '600',
+        color: 'var(--accent)', cursor: 'pointer',
+        fontFamily: 'inherit', flexShrink: 0,
+        transition: 'background 0.15s',
     },
 }
+

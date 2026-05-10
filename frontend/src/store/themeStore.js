@@ -9,8 +9,6 @@ const applyTheme = (theme) => {
 }
 
 const savedTheme = localStorage.getItem('theme') || 'dark'
-
-// Применяем тему сразу при загрузке
 applyTheme(savedTheme === 'dark' ? darkTheme : lightTheme)
 
 const useThemeStore = create((set) => ({
@@ -19,12 +17,9 @@ const useThemeStore = create((set) => ({
     toggleTheme: () => set((state) => {
         const next = state.theme === 'dark' ? 'light' : 'dark'
         localStorage.setItem('theme', next)
-
-        // Плавный переход
         document.body.classList.add('theme-transition')
         applyTheme(next === 'dark' ? darkTheme : lightTheme)
-        setTimeout(() => document.body.classList.remove('theme-transition'), 300)
-
+        setTimeout(() => document.body.classList.remove('theme-transition'), 250)
         return { theme: next }
     }),
 

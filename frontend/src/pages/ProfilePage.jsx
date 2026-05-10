@@ -2,8 +2,14 @@ import { useState, useEffect, useRef } from 'react'
 import { getMyProfile, updateProfile, uploadAvatar, deleteAvatar } from '../api/user'
 import useAuthStore from '../store/authStore'
 import { useNavigate } from 'react-router-dom'
-import PhoneVerification from '../components/PhoneVerification'
+import { LangSwitcher } from '../components/LangSwitcher'
 
+
+import {
+    ArrowLeft, LogOut, Camera, Trash2, Edit3, Check, X,
+    Mail, Phone, Calendar, FileText, AtSign, User,
+    ShieldCheck, ShieldOff, ChevronRight
+} from 'lucide-react'
 
 export default function ProfilePage() {
     const navigate = useNavigate()
@@ -12,9 +18,7 @@ export default function ProfilePage() {
     const fileRef = useRef()
 
     const [profile, setProfile] = useState(null)
-    const [form, setForm] = useState({
-        fullName: '', username: '', bio: '', phone: '', birthDate: ''
-    })
+    const [form, setForm] = useState({ fullName: '', username: '', bio: '', phone: '', birthDate: '' })
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [avatarLoading, setAvatarLoading] = useState(false)
@@ -22,9 +26,7 @@ export default function ProfilePage() {
     const [success, setSuccess] = useState('')
     const [editMode, setEditMode] = useState(false)
 
-    useEffect(() => {
-        fetchProfile()
-    }, [])
+    useEffect(() => { fetchProfile() }, [])
 
     const fetchProfile = async () => {
         try {
@@ -37,584 +39,680 @@ export default function ProfilePage() {
                 phone: res.data.phone || '',
                 birthDate: res.data.birthDate || ''
             })
-        } catch {
-            setError('Failed to load profile')
-        } finally {
-            setLoading(false)
-        }
+        } catch { setError('Failed to load profile') }
+        finally { setLoading(false) }
     }
 
     const handleSave = async () => {
-        setSaving(true)
-        setError('')
-        setSuccess('')
+        setSaving(true); setError(''); setSuccess('')
         try {
             const res = await updateProfile(form)
-            setProfile(res.data)
-            updateUser(res.data)
-            setSuccess('Profile updated successfully!')
-            setEditMode(false)
+            setProfile(res.data); updateUser(res.data)
+            setSuccess('Profile updated'); setEditMode(false)
             setTimeout(() => setSuccess(''), 3000)
         } catch (err) {
             setError(err.response?.data?.message || 'Update failed')
-        } finally {
-            setSaving(false)
-        }
+        } finally { setSaving(false) }
     }
 
     const handleAvatarChange = async (e) => {
-        const file = e.target.files[0]
-        if (!file) return
-        setAvatarLoading(true)
-        setError('')
+        const file = e.target.files[0]; if (!file) return
+        setAvatarLoading(true); setError('')
         try {
             const res = await uploadAvatar(file)
-            setProfile(res.data)
-            updateUser(res.data)
-        } catch (err) {
-            setError(err.response?.data?.message || 'Upload failed')
-        } finally {
-            setAvatarLoading(false)
-        }
+            setProfile(res.data); updateUser(res.data)
+        } catch (err) { setError(err.response?.data?.message || 'Upload failed') }
+        finally { setAvatarLoading(false) }
     }
 
     const handleDeleteAvatar = async () => {
         setAvatarLoading(true)
         try {
             const res = await deleteAvatar()
-            setProfile(res.data)
-            updateUser(res.data)
-        } catch {
-            setError('Failed to delete avatar')
-        } finally {
-            setAvatarLoading(false)
-        }
+            setProfile(res.data); updateUser(res.data)
+        } catch { setError('Failed to remove photo') }
+        finally { setAvatarLoading(false) }
     }
 
-    const handleLogout = () => {
-        logout()
-        navigate('/login')
-    }
+    const handleLogout = () => { logout(); navigate('/login') }
 
     if (loading) return (
-        <div style={styles.loadingPage}>
-            <div style={styles.spinner}>⟳</div>
+        <div style={s.loadingPage}>
+            <div style={s.spinner} />
         </div>
     )
 
     const avatarLetter = profile?.fullName?.charAt(0)?.toUpperCase() || '?'
 
     return (
-        <div style={styles.page}>
-            {/* Хедер */}
-            <div style={styles.header}>
-                <button style={styles.backBtn} onClick={() => navigate('/chat')}>
-                    ← Назад
+        <div style={s.page}>
+            {/* Header */}
+            <header style={s.header}>
+                <button style={s.headerBtn} onClick={() => navigate('/chat')}>
+                    <ArrowLeft size={16} />
+                    <span>Back</span>
                 </button>
-                <span style={styles.headerTitle}>Профиль</span>
-                <button style={styles.logoutBtn} onClick={handleLogout}>
-                    Выйти
+                <span style={s.headerTitle}>Profile</span>
+                <button style={s.logoutBtn} onClick={handleLogout}>
+                    <LogOut size={14} />
+                    <span>Sign out</span>
                 </button>
-            </div>
+            </header>
 
-            <div style={styles.container}>
-                {/* Аватар */}
-                <div style={styles.avatarSection}>
-                    <div style={styles.avatarWrapper}>
-                        {profile?.avatarUrl ? (
-                            <img
-                                src={profile.avatarUrl}
-                                alt="avatar"
-                                style={styles.avatarImg}
-                            />
-                        ) : (
-                            <div style={styles.avatarPlaceholder}>
-                                {avatarLetter}
-                            </div>
-                        )}
-                        {avatarLoading && (
-                            <div style={styles.avatarOverlay}>⟳</div>
-                        )}
+            <div style={s.pageBody}>
+                {/* Toast messages */}
+                {error && (
+                    <div style={s.toast('error')}>
+                        <div style={s.toastDot('error')} />
+                        {error}
                     </div>
+                )}
+                {success && (
+                    <div style={s.toast('success')}>
+                        <div style={s.toastDot('success')} />
+                        {success}
+                    </div>
+                )}
 
-                    <div style={styles.avatarActions}>
+                {/* Avatar card */}
+                <div style={s.avatarCard}>
+                    <div style={s.avatarWrap}>
+                        {profile?.avatarUrl ? (
+                            <img src={profile.avatarUrl} alt="avatar" style={s.avatarImg} />
+                        ) : (
+                            <div style={s.avatarPlaceholder}>{avatarLetter}</div>
+                        )}
+                        {avatarLoading && <div style={s.avatarOverlay}><div style={s.spinner} /></div>}
                         <button
-                            style={styles.avatarBtn}
+                            style={s.cameraBtn}
                             onClick={() => fileRef.current.click()}
                             disabled={avatarLoading}
                         >
-                            📷 Изменить фото
+                            <Camera size={13} />
                         </button>
-                        {profile?.avatarUrl && (
-                            <button
-                                style={styles.avatarBtnDanger}
-                                onClick={handleDeleteAvatar}
-                                disabled={avatarLoading}
-                            >
-                                🗑 Удалить
-                            </button>
-                        )}
+                        <input ref={fileRef} type="file" accept="image/*"
+                            style={{ display: 'none' }} onChange={handleAvatarChange} />
                     </div>
-                    <input
-                        ref={fileRef}
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={handleAvatarChange}
-                    />
+
+                    <div style={s.avatarInfo}>
+                        <h2 style={s.avatarName}>{profile?.fullName}</h2>
+                        <p style={s.avatarHandle}>@{profile?.username}</p>
+                        <div style={s.onlinePill}>
+                            <div style={s.onlineDot} />
+                            Online
+                        </div>
+                    </div>
+
+                    {profile?.avatarUrl && (
+                        <button style={s.removePhotoBtn} onClick={handleDeleteAvatar} disabled={avatarLoading}>
+                            <Trash2 size={13} />
+                        </button>
+                    )}
                 </div>
 
-                {/* Имя и статус */}
-                <div style={styles.nameSection}>
-                    <h2 style={styles.fullName}>{profile?.fullName}</h2>
-                    <p style={styles.username}>@{profile?.username}</p>
-                    <div style={styles.statusBadge}>
-                        <span style={styles.statusDot}></span>
-                        Online
-                    </div>
-                </div>
-
-                {/* Уведомления */}
-                {error && <div style={styles.error}>{error}</div>}
-                {success && <div style={styles.successMsg}>{success}</div>}
-
-                {/* Карточки инфо / форма */}
-                <div style={styles.card}>
-                    <div style={styles.cardHeader}>
-                        <span style={styles.cardTitle}>Информация</span>
+                {/* Info card */}
+                <div style={s.card}>
+                    <div style={s.cardHeader}>
+                        <div style={s.cardTitleRow}>
+                            <div style={s.cardIconWrap}>
+                                <User size={14} color="var(--accent)" />
+                            </div>
+                            <span style={s.cardTitle}>Personal info</span>
+                        </div>
                         {!editMode ? (
-                            <button style={styles.editBtn} onClick={() => setEditMode(true)}>
-                                ✏️ Редактировать
+                            <button style={s.editBtn} onClick={() => setEditMode(true)}>
+                                <Edit3 size={13} />
+                                Edit
                             </button>
                         ) : (
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <button style={styles.cancelBtn} onClick={() => setEditMode(false)}>
-                                    Отмена
+                            <div style={s.editActions}>
+                                <button style={s.cancelBtn} onClick={() => setEditMode(false)}>
+                                    <X size={13} />
                                 </button>
-                                <button style={styles.saveBtn} onClick={handleSave} disabled={saving}>
-                                    {saving ? 'Сохранение...' : '✓ Сохранить'}
+                                <button style={s.saveBtn} onClick={handleSave} disabled={saving}>
+                                    {saving ? <div style={{ ...s.spinner, width: 14, height: 14 }} /> : <Check size={13} />}
+                                    {saving ? 'Saving' : 'Save'}
                                 </button>
                             </div>
                         )}
                     </div>
 
-                    <div style={styles.fields}>
-                        {/* Полное имя */}
-                        <div style={styles.field}>
-                            <label style={styles.fieldLabel}>👤 Полное имя</label>
-                            {editMode ? (
-                                <input
-                                    style={styles.input}
-                                    value={form.fullName}
-                                    onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                                    placeholder="Ваше имя"
-                                />
-                            ) : (
-                                <span style={styles.fieldValue}>
-                                    {profile?.fullName || <em style={styles.empty}>Не указано</em>}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Username */}
-                        <div style={styles.field}>
-                            <label style={styles.fieldLabel}>🔖 Логин</label>
-                            {editMode ? (
-                                <input
-                                    style={styles.input}
-                                    value={form.username}
-                                    onChange={(e) => setForm({ ...form, username: e.target.value })}
-                                    placeholder="username"
-                                />
-                            ) : (
-                                <span style={styles.fieldValue}>@{profile?.username}</span>
-                            )}
-                        </div>
-
-                        {/* Email (только чтение) */}
-                        <div style={styles.field}>
-                            <label style={styles.fieldLabel}>
-                                📧 Email
-                                {profile?.emailVerified && (
-                                    <span style={styles.verified}>✓ Подтверждён</span>
-                                )}
-                            </label>
-                            <span style={styles.fieldValue}>{profile?.email}</span>
-                        </div>
-
-                        {/* Телефон */}
-                        <div style={styles.field}>
-                            <label style={styles.fieldLabel}>
-                                📱 Номер телефона
-                                {profile?.phoneVerified && (
-                                    <span style={styles.verified}>✓ Подтверждён</span>
-                                )}
-                            </label>
-                            {editMode ? (
-                                <input
-                                    style={styles.input}
-                                    value={form.phone}
-                                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                                    placeholder="+7 777 000 00 00"
-                                />
-                            ) : (
-                                <span style={styles.fieldValue}>
-                                    {profile?.phone || <em style={styles.empty}>Не указан</em>}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* День рождения */}
-                        <div style={styles.field}>
-                            <label style={styles.fieldLabel}>🎂 День рождения</label>
-                            {editMode ? (
-                                <input
-                                    style={styles.input}
-                                    type="date"
-                                    value={form.birthDate}
-                                    onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
-                                />
-                            ) : (
-                                <span style={styles.fieldValue}>
-                                    {profile?.birthDate
-                                        ? new Date(profile.birthDate).toLocaleDateString('ru-RU')
-                                        : <em style={styles.empty}>Не указан</em>}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Био */}
-                        <div style={styles.field}>
-                            <label style={styles.fieldLabel}>💬 Био</label>
-                            {editMode ? (
-                                <textarea
-                                    style={styles.textarea}
-                                    value={form.bio}
-                                    onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                                    placeholder="Расскажите о себе..."
-                                    maxLength={200}
-                                    rows={3}
-                                />
-                            ) : (
-                                <span style={styles.fieldValue}>
-                                    {profile?.bio || <em style={styles.empty}>Не указано</em>}
-                                </span>
-                            )}
-                        </div>
+                    <div style={s.fieldList}>
+                        <Field
+                            icon={<User size={14} color="var(--text-muted)" />}
+                            label="Full name"
+                            editMode={editMode}
+                            value={profile?.fullName}
+                            inputValue={form.fullName}
+                            onChange={v => setForm({ ...form, fullName: v })}
+                            placeholder="Your full name"
+                        />
+                        <Field
+                            icon={<AtSign size={14} color="var(--text-muted)" />}
+                            label="Username"
+                            editMode={editMode}
+                            value={`@${profile?.username}`}
+                            inputValue={form.username}
+                            onChange={v => setForm({ ...form, username: v })}
+                            placeholder="username"
+                        />
+                        <Field
+                            icon={<Mail size={14} color="var(--text-muted)" />}
+                            label="Email"
+                            editMode={false}
+                            value={profile?.email}
+                            badge={profile?.emailVerified ? 'Verified' : null}
+                        />
+                        <Field
+                            icon={<Phone size={14} color="var(--text-muted)" />}
+                            label="Phone"
+                            editMode={editMode}
+                            value={profile?.phone}
+                            inputValue={form.phone}
+                            onChange={v => setForm({ ...form, phone: v })}
+                            placeholder="+7 700 000 00 00"
+                            type="tel"
+                        />
+                        <Field
+                            icon={<Calendar size={14} color="var(--text-muted)" />}
+                            label="Birthday"
+                            editMode={editMode}
+                            value={profile?.birthDate
+                                ? new Date(profile.birthDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                                : null}
+                            inputValue={form.birthDate}
+                            onChange={v => setForm({ ...form, birthDate: v })}
+                            type="date"
+                        />
+                        <Field
+                            icon={<FileText size={14} color="var(--text-muted)" />}
+                            label="Bio"
+                            editMode={editMode}
+                            value={profile?.bio}
+                            inputValue={form.bio}
+                            onChange={v => setForm({ ...form, bio: v })}
+                            placeholder="Tell something about yourself..."
+                            multiline
+                            last
+                        />
                     </div>
                 </div>
 
-                {/* Безопасность */}
-                <div style={styles.card}>
-                    <div style={styles.cardHeader}>
-                        <span style={styles.cardTitle}>🔐 Безопасность</span>
+                {/* Security card */}
+                <div style={s.card}>
+                    <div style={s.cardHeader}>
+                        <div style={s.cardTitleRow}>
+                            <div style={s.cardIconWrap}>
+                                <ShieldCheck size={14} color="var(--accent)" />
+                            </div>
+                            <span style={s.cardTitle}>Security</span>
+                        </div>
                     </div>
-                    <div style={styles.securityRow}>
-                        <span style={styles.fieldLabel}>Email подтверждён</span>
-                        <span style={profile?.emailVerified ? styles.yes : styles.no}>
-                            {profile?.emailVerified ? '✓ Да' : '✗ Нет'}
-                        </span>
-                    </div>
-                    <div style={styles.securityRow}>
-                        <span style={styles.fieldLabel}>Телефон подтверждён</span>
-                        <span style={profile?.phoneVerified ? styles.yes : styles.no}>
-                            {profile?.phoneVerified ? '✓ Да' : '✗ Нет'}
-                        </span>
+                    <div style={s.securityList}>
+                        <SecurityRow
+                            label="Email verified"
+                            verified={profile?.emailVerified}
+                        />
+                        <SecurityRow
+                            label="Phone verified"
+                            verified={profile?.phoneVerified}
+                            last
+                        />
                     </div>
                 </div>
-
             </div>
         </div>
     )
 }
 
-const styles = {
+/* ── Sub-components ── */
+function Field({ icon, label, editMode, value, inputValue, onChange, placeholder, type = 'text', multiline, badge, last }) {
+    return (
+        <div style={{
+            ...sf.fieldRow,
+            borderBottom: last ? 'none' : '1px solid var(--border)',
+        }}>
+            <div style={sf.fieldIcon}>{icon}</div>
+            <div style={sf.fieldBody}>
+                <span style={sf.fieldLabel}>{label}</span>
+                {editMode ? (
+                    multiline ? (
+                        <textarea
+                            style={sf.textarea}
+                            value={inputValue}
+                            onChange={e => onChange(e.target.value)}
+                            placeholder={placeholder}
+                            maxLength={200}
+                            rows={3}
+                        />
+                    ) : (
+                        <input
+                            style={sf.input}
+                            value={inputValue}
+                            onChange={e => onChange(e.target.value)}
+                            placeholder={placeholder}
+                            type={type}
+                        />
+                    )
+                ) : (
+                    <span style={sf.fieldValue}>
+                        {value || <span style={sf.empty}>Not set</span>}
+                        {badge && <span style={sf.badge}><ShieldCheck size={10} /> {badge}</span>}
+                    </span>
+                )}
+            </div>
+        </div>
+    )
+}
+
+function SecurityRow({ label, verified, last }) {
+    return (
+        <div style={{
+            ...sf.secRow,
+            borderBottom: last ? 'none' : '1px solid var(--border)',
+        }}>
+            <div style={sf.secIcon}>
+                {verified
+                    ? <ShieldCheck size={15} color="var(--success)" />
+                    : <ShieldOff size={15} color="var(--text-muted)" />
+                }
+            </div>
+            <span style={sf.secLabel}>{label}</span>
+            <span style={{
+                ...sf.secStatus,
+                color: verified ? 'var(--success)' : 'var(--text-muted)',
+                background: verified ? 'var(--success-bg)' : 'var(--bg-elevated)',
+                borderColor: verified ? 'rgba(16,185,129,0.2)' : 'var(--border)',
+            }}>
+                {verified ? 'Verified' : 'Not verified'}
+            </span>
+        </div>
+    )
+}
+
+/* ── Styles ── */
+const s = {
     page: {
         minHeight: '100vh',
-        background: '#0f0f1a',
-        fontFamily: "'Segoe UI', sans-serif",
-        color: '#fff',
+        background: 'var(--bg-primary)',
+        fontFamily: "'Inter', sans-serif",
+        color: 'var(--text-primary)',
     },
     loadingPage: {
         minHeight: '100vh',
-        background: '#0f0f1a',
+        background: 'var(--bg-primary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
     },
     spinner: {
-        fontSize: '40px',
-        color: '#7c6af7',
-        animation: 'spin 1s linear infinite',
+        width: '20px', height: '20px',
+        border: '2px solid var(--border)',
+        borderTop: '2px solid var(--accent)',
+        borderRadius: '50%',
+        animation: 'spin 0.7s linear infinite',
+        display: 'inline-block',
     },
     header: {
-        background: '#1a1a2e',
-        borderBottom: '1px solid #2d2d4e',
-        padding: '16px 24px',
+        background: 'var(--bg-secondary)',
+        borderBottom: '1px solid var(--border)',
+        padding: '0 24px',
+        height: '56px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         position: 'sticky',
         top: 0,
         zIndex: 10,
+        backdropFilter: 'blur(12px)',
     },
-    headerTitle: {
-        fontSize: '18px',
-        fontWeight: '700',
-        color: '#fff',
-    },
-    backBtn: {
+    headerBtn: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
         background: 'transparent',
         border: 'none',
-        color: '#7c6af7',
-        fontSize: '15px',
-        cursor: 'pointer',
+        color: 'var(--accent)',
+        fontSize: '13px',
         fontWeight: '600',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        padding: '6px 10px',
+        borderRadius: '8px',
+        transition: 'background 0.15s',
+    },
+    headerTitle: {
+        fontSize: '15px',
+        fontWeight: '700',
+        color: 'var(--text-primary)',
+        letterSpacing: '-0.02em',
     },
     logoutBtn: {
-        background: '#2d1a1a',
-        border: '1px solid #f87171',
-        color: '#f87171',
-        borderRadius: '8px',
-        padding: '6px 14px',
-        fontSize: '13px',
-        cursor: 'pointer',
-        fontWeight: '600',
-    },
-    container: {
-        maxWidth: '600px',
-        margin: '0 auto',
-        padding: '24px 16px',
         display: 'flex',
-        flexDirection: 'column',
-        gap: '20px',
-    },
-    avatarSection: {
-        display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
+        gap: '6px',
+        background: 'var(--error-bg)',
+        border: '1px solid rgba(239,68,68,0.2)',
+        color: 'var(--error)',
+        borderRadius: '8px',
+        padding: '6px 12px',
+        fontSize: '12px',
+        fontWeight: '600',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        transition: 'opacity 0.15s',
+    },
+    pageBody: {
+        maxWidth: '560px',
+        margin: '0 auto',
+        padding: '28px 16px',
+        display: 'flex',
+        flexDirection: 'column',
         gap: '16px',
     },
-    avatarWrapper: {
+    toast: (type) => ({
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        background: type === 'error' ? 'var(--error-bg)' : 'var(--success-bg)',
+        border: `1px solid ${type === 'error' ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)'}`,
+        borderRadius: '10px',
+        padding: '11px 14px',
+        fontSize: '13px',
+        fontWeight: '500',
+        color: type === 'error' ? 'var(--error)' : 'var(--success)',
+        animation: 'fadeUp 0.2s ease',
+    }),
+    toastDot: (type) => ({
+        width: '6px', height: '6px',
+        borderRadius: '50%',
+        background: type === 'error' ? 'var(--error)' : 'var(--success)',
+        flexShrink: 0,
+    }),
+
+    /* Avatar card */
+    avatarCard: {
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
+        borderRadius: '16px',
+        padding: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '20px',
         position: 'relative',
-        width: '110px',
-        height: '110px',
+    },
+    avatarWrap: {
+        position: 'relative',
+        flexShrink: 0,
     },
     avatarImg: {
-        width: '110px',
-        height: '110px',
-        borderRadius: '50%',
+        width: '80px', height: '80px',
+        borderRadius: '20px',
         objectFit: 'cover',
-        border: '3px solid #7c6af7',
+        border: '2px solid var(--border)',
     },
     avatarPlaceholder: {
-        width: '110px',
-        height: '110px',
-        borderRadius: '50%',
-        background: 'linear-gradient(135deg, #7c6af7, #a78bfa)',
+        width: '80px', height: '80px',
+        borderRadius: '20px',
+        background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '42px',
+        fontSize: '28px',
         fontWeight: '800',
         color: '#fff',
-        border: '3px solid #7c6af7',
+        letterSpacing: '-0.02em',
     },
     avatarOverlay: {
-        position: 'absolute',
-        inset: 0,
-        borderRadius: '50%',
+        position: 'absolute', inset: 0,
+        borderRadius: '20px',
         background: 'rgba(0,0,0,0.5)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '24px',
-        color: '#fff',
     },
-    avatarActions: {
+    cameraBtn: {
+        position: 'absolute',
+        bottom: '-6px', right: '-6px',
+        width: '26px', height: '26px',
+        borderRadius: '8px',
+        background: 'var(--accent)',
+        border: '2px solid var(--bg-secondary)',
+        color: '#fff',
         display: 'flex',
-        gap: '10px',
-    },
-    avatarBtn: {
-        background: '#2d2d4e',
-        border: '1px solid #3d3d6e',
-        color: '#fff',
-        borderRadius: '8px',
-        padding: '8px 14px',
-        fontSize: '13px',
+        alignItems: 'center',
+        justifyContent: 'center',
         cursor: 'pointer',
+        transition: 'opacity 0.15s',
     },
-    avatarBtnDanger: {
-        background: '#2d1a1a',
-        border: '1px solid #f87171',
-        color: '#f87171',
-        borderRadius: '8px',
-        padding: '8px 14px',
+    avatarInfo: {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
+    },
+    avatarName: {
+        fontSize: '18px',
+        fontWeight: '700',
+        color: 'var(--text-primary)',
+        letterSpacing: '-0.03em',
+    },
+    avatarHandle: {
         fontSize: '13px',
-        cursor: 'pointer',
+        color: 'var(--accent-light)',
+        fontWeight: '500',
     },
-    nameSection: {
-        textAlign: 'center',
-    },
-    fullName: {
-        fontSize: '24px',
-        fontWeight: '800',
-        margin: '0 0 4px',
-        color: '#fff',
-    },
-    username: {
-        color: '#7c6af7',
-        fontSize: '15px',
-        margin: '0 0 10px',
-    },
-    statusBadge: {
+    onlinePill: {
         display: 'inline-flex',
         alignItems: 'center',
         gap: '6px',
-        background: '#1a2e1a',
-        border: '1px solid #4ade80',
-        borderRadius: '20px',
-        padding: '4px 12px',
-        fontSize: '13px',
-        color: '#4ade80',
+        background: 'var(--success-bg)',
+        border: '1px solid rgba(16,185,129,0.2)',
+        borderRadius: '999px',
+        padding: '3px 10px',
+        fontSize: '11px',
+        fontWeight: '600',
+        color: 'var(--success)',
+        width: 'fit-content',
+        marginTop: '4px',
     },
-    statusDot: {
-        width: '8px',
-        height: '8px',
+    onlineDot: {
+        width: '6px', height: '6px',
         borderRadius: '50%',
-        background: '#4ade80',
-        display: 'inline-block',
+        background: 'var(--success)',
+        boxShadow: '0 0 6px var(--success)',
     },
+    removePhotoBtn: {
+        position: 'absolute',
+        top: '16px', right: '16px',
+        background: 'var(--error-bg)',
+        border: '1px solid rgba(239,68,68,0.2)',
+        borderRadius: '8px',
+        padding: '6px',
+        color: 'var(--error)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        transition: 'opacity 0.15s',
+    },
+
+    /* Cards */
     card: {
-        background: '#1a1a2e',
-        border: '1px solid #2d2d4e',
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
         borderRadius: '16px',
-        padding: '20px',
+        overflow: 'hidden',
     },
     cardHeader: {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: '20px',
+        padding: '16px 20px',
+        borderBottom: '1px solid var(--border)',
+    },
+    cardTitleRow: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+    },
+    cardIconWrap: {
+        width: '28px', height: '28px',
+        borderRadius: '8px',
+        background: 'var(--accent-bg)',
+        border: '1px solid var(--accent-bg-hover)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     cardTitle: {
-        fontSize: '16px',
-        fontWeight: '700',
-        color: '#fff',
+        fontSize: '14px',
+        fontWeight: '600',
+        color: 'var(--text-primary)',
+        letterSpacing: '-0.01em',
     },
     editBtn: {
-        background: '#2d2d4e',
-        border: '1px solid #3d3d6e',
-        color: '#a78bfa',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border)',
         borderRadius: '8px',
-        padding: '6px 14px',
-        fontSize: '13px',
+        padding: '6px 12px',
+        fontSize: '12px',
+        fontWeight: '600',
+        color: 'var(--text-secondary)',
         cursor: 'pointer',
+        fontFamily: 'inherit',
+        transition: 'background 0.15s',
     },
-    saveBtn: {
-        background: '#7c6af7',
-        border: 'none',
-        color: '#fff',
-        borderRadius: '8px',
-        padding: '6px 14px',
-        fontSize: '13px',
-        cursor: 'pointer',
-        fontWeight: '700',
+    editActions: {
+        display: 'flex',
+        gap: '6px',
+        alignItems: 'center',
     },
     cancelBtn: {
-        background: 'transparent',
-        border: '1px solid #3d3d6e',
-        color: '#888',
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border)',
+        borderRadius: '8px',
+        padding: '6px',
+        color: 'var(--text-secondary)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+    },
+    saveBtn: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        background: 'var(--accent)',
+        border: 'none',
         borderRadius: '8px',
         padding: '6px 14px',
-        fontSize: '13px',
+        fontSize: '12px',
+        fontWeight: '600',
+        color: '#fff',
         cursor: 'pointer',
+        fontFamily: 'inherit',
     },
-    fields: {
+    fieldList: { padding: '4px 0' },
+    securityList: { padding: '4px 0' },
+}
+
+const sf = {
+    fieldRow: {
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '14px',
+        padding: '14px 20px',
+    },
+    fieldIcon: {
+        marginTop: '2px',
+        flexShrink: 0,
+    },
+    fieldBody: {
+        flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
-    },
-    field: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '6px',
-        borderBottom: '1px solid #2d2d4e',
-        paddingBottom: '16px',
+        gap: '5px',
     },
     fieldLabel: {
-        fontSize: '12px',
-        color: '#888',
+        fontSize: '11px',
         fontWeight: '600',
+        color: 'var(--text-muted)',
         textTransform: 'uppercase',
-        letterSpacing: '0.5px',
+        letterSpacing: '0.06em',
+    },
+    fieldValue: {
+        fontSize: '14px',
+        color: 'var(--text-primary)',
+        fontWeight: '400',
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-    },
-    fieldValue: {
-        fontSize: '15px',
-        color: '#e2e8f0',
+        flexWrap: 'wrap',
     },
     empty: {
-        color: '#555',
+        color: 'var(--text-muted)',
         fontStyle: 'italic',
+        fontSize: '13px',
     },
-    verified: {
-        background: '#1a2e1a',
-        color: '#4ade80',
-        fontSize: '11px',
+    badge: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        background: 'var(--success-bg)',
+        border: '1px solid rgba(16,185,129,0.2)',
+        color: 'var(--success)',
+        borderRadius: '999px',
         padding: '2px 8px',
-        borderRadius: '10px',
+        fontSize: '11px',
         fontWeight: '600',
     },
     input: {
-        background: '#0f0f1a',
-        border: '1px solid #3d3d6e',
+        background: 'var(--bg-tertiary)',
+        border: '1px solid var(--border)',
         borderRadius: '8px',
-        padding: '10px 14px',
-        color: '#fff',
-        fontSize: '15px',
+        padding: '9px 12px',
+        color: 'var(--text-primary)',
+        fontSize: '14px',
         outline: 'none',
+        fontFamily: 'inherit',
         width: '100%',
-        boxSizing: 'border-box',
+        transition: 'border-color 0.15s',
     },
     textarea: {
-        background: '#0f0f1a',
-        border: '1px solid #3d3d6e',
+        background: 'var(--bg-tertiary)',
+        border: '1px solid var(--border)',
         borderRadius: '8px',
-        padding: '10px 14px',
-        color: '#fff',
-        fontSize: '15px',
+        padding: '9px 12px',
+        color: 'var(--text-primary)',
+        fontSize: '14px',
         outline: 'none',
+        fontFamily: 'inherit',
         width: '100%',
-        boxSizing: 'border-box',
         resize: 'vertical',
-        fontFamily: "'Segoe UI', sans-serif",
+        lineHeight: '1.5',
+        transition: 'border-color 0.15s',
     },
-    securityRow: {
+    secRow: {
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '10px 0',
-        borderBottom: '1px solid #2d2d4e',
+        gap: '14px',
+        padding: '14px 20px',
     },
-    yes: { color: '#4ade80', fontWeight: '700' },
-    no: { color: '#f87171', fontWeight: '700' },
-    error: {
-        background: '#2d1a1a',
-        border: '1px solid #f87171',
-        color: '#f87171',
-        borderRadius: '8px',
-        padding: '10px 14px',
-        fontSize: '13px',
+    secIcon: { flexShrink: 0 },
+    secLabel: {
+        flex: 1,
+        fontSize: '14px',
+        color: 'var(--text-primary)',
+        fontWeight: '500',
     },
-    successMsg: {
-        background: '#1a2e1a',
-        border: '1px solid #4ade80',
-        color: '#4ade80',
-        borderRadius: '8px',
-        padding: '10px 14px',
-        fontSize: '13px',
+    secStatus: {
+        fontSize: '11px',
+        fontWeight: '600',
+        padding: '3px 10px',
+        borderRadius: '999px',
+        border: '1px solid',
+        letterSpacing: '0.02em',
     },
 }

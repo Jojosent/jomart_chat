@@ -1,29 +1,29 @@
+import { Check, CheckCheck } from 'lucide-react'
+
+
 export default function MessageTicks({ status }) {
     if (status === 'READ') {
         return (
-            <span style={styles.container} title="Прочитано">
-                <Tick color="#7c6af7" />
-                <Tick color="#7c6af7" style={{ marginLeft: '-5px' }} />
+            <span title="Read" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <CheckCheck size={13} color="#6366f1" />
             </span>
         )
     }
-
     if (status === 'DELIVERED') {
         return (
-            <span style={styles.container} title="Доставлено">
-                <Tick color="rgba(255,255,255,0.45)" />
-                <Tick color="rgba(255,255,255,0.45)" style={{ marginLeft: '-5px' }} />
+            <span title="Delivered" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <CheckCheck size={13} color="rgba(255,255,255,0.4)" />
             </span>
         )
     }
-
     // SENT
     return (
-        <span style={styles.container} title="Отправлено">
-            <Tick color="rgba(255,255,255,0.45)" />
+        <span title="Sent" style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <Check size={13} color="rgba(255,255,255,0.4)" />
         </span>
     )
 }
+
 
 // SVG птичка — точная копия стиля WhatsApp
 function Tick({ color, style }) {

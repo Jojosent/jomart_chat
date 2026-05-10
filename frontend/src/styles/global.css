@@ -1,7 +1,7 @@
-/* ── Шрифты ─────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+/* ── Fonts ──────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-/* ── Сброс ──────────────────────────────────────────────────── */
+/* ── Reset ──────────────────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -10,65 +10,115 @@
     padding: 0;
 }
 
-/* ── Корень ─────────────────────────────────────────────────── */
+/* ── Root ───────────────────────────────────────────────────── */
 :root {
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+html,
+body,
+#root {
+    width: 100%;
+    height: 100%;
 }
 
 body {
     background: var(--bg-primary);
     color: var(--text-primary);
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    transition: background 0.3s ease, color 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.25s ease, color 0.25s ease;
     overflow: hidden;
+    line-height: 1.5;
 }
 
-/* ── Скроллбар ──────────────────────────────────────────────── */
-::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--scrollbar);
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--accent);
-}
-
-/* ── Выделение текста ───────────────────────────────────────── */
+/* ── Selection ──────────────────────────────────────────────── */
 ::selection {
     background: var(--accent);
     color: #fff;
 }
 
-/* ── Анимации ───────────────────────────────────────────────── */
-@keyframes bounce {
-
-    0%,
-    60%,
-    100% {
-        transform: translateY(0);
-    }
-
-    30% {
-        transform: translateY(-6px);
-    }
+/* ── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
 }
 
-@keyframes fadeIn {
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 999px;
+    transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+/* ── Typography ─────────────────────────────────────────────── */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* ── Inputs & Buttons ───────────────────────────────────────── */
+input,
+textarea,
+select {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-muted);
+}
+
+button {
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    transition: all 0.15s ease;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+/* ── Focus ──────────────────────────────────────────────────── */
+input:focus,
+textarea:focus,
+button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ── Animations ─────────────────────────────────────────────── */
+@keyframes fadeUp {
     from {
         opacity: 0;
-        transform: translateY(8px);
+        transform: translateY(10px);
     }
 
     to {
@@ -77,10 +127,32 @@ body {
     }
 }
 
-@keyframes slideIn {
+@keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateX(-12px);
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(16px);
     }
 
     to {
@@ -97,7 +169,7 @@ body {
     }
 
     50% {
-        opacity: 0.5;
+        opacity: 0.4;
     }
 }
 
@@ -111,42 +183,109 @@ body {
     }
 }
 
-/* ── Утилиты ────────────────────────────────────────────────── */
+@keyframes bounce {
+
+    0%,
+    60%,
+    100% {
+        transform: translateY(0);
+    }
+
+    30% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% center;
+    }
+
+    100% {
+        background-position: 200% center;
+    }
+}
+
+/* ── Utility classes ────────────────────────────────────────── */
+.fade-up {
+    animation: fadeUp 0.2s ease forwards;
+}
+
 .fade-in {
     animation: fadeIn 0.2s ease forwards;
 }
 
-.slide-in {
-    animation: slideIn 0.2s ease forwards;
+.slide-left {
+    animation: slideInLeft 0.2s ease forwards;
 }
 
-/* ── Инпуты глобально ───────────────────────────────────────── */
-input,
-textarea {
-    font-family: 'Plus Jakarta Sans', sans-serif;
+.slide-right {
+    animation: slideInRight 0.2s ease forwards;
 }
 
-input::placeholder,
-textarea::placeholder {
-    color: var(--text-muted);
+/* ── Glass card ─────────────────────────────────────────────── */
+.glass {
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
 }
 
-/* ── Кнопки глобально ───────────────────────────────────────── */
-button {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    cursor: pointer;
+/* ── Skeleton loader ────────────────────────────────────────── */
+.skeleton {
+    background: linear-gradient(90deg,
+            var(--bg-elevated) 25%,
+            var(--bg-hover) 50%,
+            var(--bg-elevated) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: var(--radius-sm);
 }
 
-button:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-
-/* ── Переходы для темы ──────────────────────────────────────── */
+/* ── Theme transition ───────────────────────────────────────── */
 .theme-transition * {
     transition:
-        background-color 0.25s ease,
-        border-color 0.25s ease,
-        color 0.25s ease,
-        box-shadow 0.25s ease !important;
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease !important;
+}
+
+/* ── Code ───────────────────────────────────────────────────── */
+code,
+pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+}
+
+/* ── Divider ────────────────────────────────────────────────── */
+.divider {
+    height: 1px;
+    background: var(--border);
+    width: 100%;
+}
+
+/* ── Dot indicator ──────────────────────────────────────────── */
+.online-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--online);
+    box-shadow: 0 0 0 2px var(--bg-secondary),
+        0 0 8px var(--online);
+    flex-shrink: 0;
+}
+
+.offline-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--offline);
+    flex-shrink: 0;
+}
+
+input:focus,
+textarea:focus {
+    border-color: var(--border-focus) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }

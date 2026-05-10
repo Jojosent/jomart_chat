@@ -5,12 +5,18 @@ import useAuthStore from '../store/authStore'
 import { useNavigate } from 'react-router-dom'
 import CreateGroupModal from '../components/CreateGroupModal'
 import MessageTicks from '../components/MessageTicks'
-import NotificationPanel from '../components/NotificationPanel'
+import { NotificationPanel } from '../components/NotificationPanel'
 import useNotifications from '../hooks/useNotifications'
-import SearchPanel from '../components/SearchPanel'
+import { SearchPanel } from '../components/SearchPanel'
 import TranslateButton from '../components/TranslateButton'
-import LangSwitcher from '../components/LangSwitcher'
-import ThemeToggle from '../components/ThemeToggle'
+import { LangSwitcher } from '../components/LangSwitcher'
+import { ThemeToggle } from '../components/ThemeToggle'
+
+import {
+    Search, Bell, Bot, Users, User, Plus,
+    Settings, Circle, Trash2,
+    MessageSquare, X, ChevronRight,
+} from 'lucide-react'
 
 
 export default function ChatPage() {
@@ -27,212 +33,170 @@ export default function ChatPage() {
     const messagesEndRef = useRef(null)
     const typingTimerRef = useRef(null)
     const [showCreateGroup, setShowCreateGroup] = useState(false)
+    const [showNotifications, setShowNotifications] = useState(false)
+    const [hoveredChat, setHoveredChat] = useState(null)
+
+    const {
+        unreadCount, addNotification, fetchUnreadCount, resetUnread,
+    } = useNotifications()
 
     const FRONT_BAD_WORDS = [
         'блять', 'блядь', 'ёбаный', 'ебаный', 'пиздец', 'хуй', 'сука', 'мудак',
         'fuck', 'shit', 'bitch', 'asshole', 'bastard', 'cunt', 'dick', 'pussy'
     ]
-    const [showNotifications, setShowNotifications] = useState(false)
-    const {
-        unreadCount,
-        addNotification,
-        fetchUnreadCount,
-        resetUnread,
-    } = useNotifications()
-
     const hasProfanity = (text) => {
         const lower = text.toLowerCase()
         return FRONT_BAD_WORDS.some(w => lower.includes(w))
     }
 
-    // WebSocket handlers
     const { connected, sendMessage, markRead, sendTyping } = useWebSocket(
-        // onMessage
         (msg) => {
             setMessages(prev => {
-                // Если это наше сообщение — заменяем temp на реальное
                 if (msg.senderId === me?.id) {
                     const hasTemp = prev.some(m => m.temp && m.chatId === msg.chatId)
                     if (hasTemp) {
-                        // Заменяем последнее temp сообщение
                         const idx = [...prev].reverse().findIndex(m => m.temp && m.chatId === msg.chatId)
-                        const realIdx = prev.length - 1 - idx
-                        return prev.map((m, i) => i === realIdx ? msg : m)
+                        return prev.map((m, i) => i === prev.length - 1 - idx ? msg : m)
                     }
                 }
-                // Чужое сообщение — просто добавляем если нет дубликата
                 if (prev.find(m => m.id === msg.id)) return prev
                 return [...prev, msg]
             })
-
-            // Обновляем список чатов (последнее сообщение)
             setChats(prev => prev.map(c =>
                 c.id === msg.chatId ? { ...c, lastMessage: msg } : c
             ))
-
-            // Помечаем прочитанным если этот чат активен
             if (msg.chatId === activeChatRef.current?.id && msg.senderId !== me?.id) {
                 markRead(msg.chatId)
             }
         },
-
-        // onDelivered
         (msg) => {
             setMessages(prev => prev.map(m =>
                 m.id === msg.id ? { ...m, status: 'DELIVERED' } : m
             ))
         },
-
-        // onReadStatus
         (data) => {
             setMessages(prev => prev.map(m =>
                 data.messageIds?.includes(m.id) ? { ...m, status: 'READ' } : m
             ))
         },
-
-        // onTyping
         (data) => {
             if (data.chatId === activeChat?.id) {
                 setTypingUsers(prev => ({ ...prev, [data.username]: data.typing }))
             }
         },
-
-        // onNotification
-        (notification) => {
-            addNotification(notification)
-        }
+        (notification) => { addNotification(notification) }
     )
 
-
     useEffect(() => { fetchChats() }, [])
+    useEffect(() => { activeChatRef.current = activeChat }, [activeChat])
+    useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
     useEffect(() => {
-        activeChatRef.current = activeChat
-    }, [activeChat])
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages])
-
-    useEffect(() => {
-        if (activeChat) {
-            fetchMessages(activeChat.id)
-            markRead(activeChat.id)
-        }
+        if (activeChat) { fetchMessages(activeChat.id); markRead(activeChat.id) }
     }, [activeChat])
 
     const fetchChats = async () => {
-        try {
-            const res = await getMyChats()
-            setChats(res.data)
-        } finally {
-            setLoading(false)
-        }
+        try { const res = await getMyChats(); setChats(res.data) }
+        finally { setLoading(false) }
     }
-
     const fetchMessages = async (chatId) => {
         const res = await getChatMessages(chatId)
         setMessages(res.data)
     }
-
     const handleSend = () => {
         if (!input.trim() || !activeChat) return
-
         const content = input.trim()
         setInput('')
-
-        // ── Оптимистичное обновление ─────────────────────────────────
-        // Показываем сообщение СРАЗУ не дожидаясь WebSocket
         const tempMsg = {
-            id: Date.now(),           // временный id
-            chatId: activeChat.id,
-            senderId: me?.id,
-            senderName: me?.fullName,
-            senderAvatar: me?.avatarUrl,
-            content: content,
-            status: 'SENT',
-            edited: false,
-            deleted: false,
-            createdAt: new Date().toISOString(),
-            temp: true,               // флаг что это временное
+            id: Date.now(), chatId: activeChat.id,
+            senderId: me?.id, senderName: me?.fullName,
+            senderAvatar: me?.avatarUrl, content,
+            status: 'SENT', edited: false, deleted: false,
+            createdAt: new Date().toISOString(), temp: true,
         }
-
         setMessages(prev => [...prev, tempMsg])
         sendTyping(activeChat?.id, false)
-
-        // ── Отправляем через WebSocket ───────────────────────────────
         sendMessage(activeChat.id, content)
     }
-
     const handleKeyDown = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault()
-            handleSend()
-        } else {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
+        else {
             sendTyping(activeChat?.id, true)
             clearTimeout(typingTimerRef.current)
-            typingTimerRef.current = setTimeout(() => {
-                sendTyping(activeChat?.id, false)
-            }, 2000)
+            typingTimerRef.current = setTimeout(() => sendTyping(activeChat?.id, false), 2000)
         }
     }
-
     const handleDeleteMsg = async (msgId) => {
         await deleteMessage(msgId)
         setMessages(prev => prev.map(m =>
-            m.id === msgId ? { ...m, deleted: true, content: 'Сообщение удалено' } : m
+            m.id === msgId ? { ...m, deleted: true, content: 'Message deleted' } : m
         ))
     }
-
-    // Получить имя собеседника в приватном чате
     const getChatName = (chat) => {
-        if (chat.type === 'GROUP') {
-            return chat.name || chat.groupName || 'Группа'
-        }
+        if (chat.type === 'GROUP') return chat.name || 'Group'
         const other = chat.members?.find(m => m.id !== me?.id)
-        return other?.fullName || 'Неизвестный'
+        return other?.fullName || 'Unknown'
     }
     const getChatAvatar = (chat) => {
         if (chat.type === 'GROUP') return chat.avatarUrl || null
-        const other = chat.members?.find(m => m.id !== me?.id)
-        return other?.avatarUrl
+        return chat.members?.find(m => m.id !== me?.id)?.avatarUrl
     }
-
+    const getChatStatus = (chat) => {
+        if (chat.type === 'GROUP') return null
+        return chat.members?.find(m => m.id !== me?.id)?.status
+    }
     const isTyping = Object.values(typingUsers).some(Boolean)
 
-    // Птички статуса
-    const renderTicks = (msg) => {
-        if (msg.senderId !== me?.id) return null
-        if (msg.status === 'READ') return <span style={styles.ticksRead}>✓✓</span>
-        if (msg.status === 'DELIVERED') return <span style={styles.ticksGray}>✓✓</span>
-        return <span style={styles.ticksGray}>✓</span>
+    const formatTime = (dateStr) => {
+        if (!dateStr) return ''
+        const d = new Date(dateStr)
+        const now = new Date()
+        const isToday = d.toDateString() === now.toDateString()
+        if (isToday) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        return d.toLocaleDateString([], { month: 'short', day: 'numeric' })
     }
 
     return (
-        <div style={styles.page}>
+        <div style={s.page}>
 
-            {/* ── Sidebar ─────────────────────────────── */}
-            <div style={styles.sidebar}>
-                {/* Хедер сайдбара */}
-                <div style={styles.sidebarHeader}>
+            {/* ══════════════ SIDEBAR ══════════════ */}
+            <aside style={s.sidebar}>
+
+                {/* ── Top bar ── */}
+                <div style={s.topBar}>
                     {!searchMode ? (
                         <>
-                            <span style={styles.logo}>JoChat</span>
-                            <div style={styles.sidebarActions}>
-                                <button style={styles.iconBtn} onClick={() => setSearchMode(true)} title="Поиск">
-                                    🔍
-                                </button>
+                            {/* Logo */}
+                            <div style={s.logoWrap}>
+                                <div style={s.logoIcon}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                                            fill="#6366f1" />
+                                    </svg>
+                                </div>
+                                <span style={s.logoText}>JoChat</span>
+                            </div>
 
+                            {/* Actions */}
+                            <div style={s.topActions}>
+                                <ThemeToggle />
+
+                                {/* Notifications */}
                                 <div style={{ position: 'relative' }}>
                                     <button
-                                        style={styles.iconBtn}
+                                        style={{
+                                            ...s.iconBtn,
+                                            background: showNotifications ? 'var(--accent-bg)' : 'transparent',
+                                            color: showNotifications ? 'var(--accent)' : 'var(--text-secondary)',
+                                        }}
                                         onClick={() => {
                                             setShowNotifications(!showNotifications)
                                             if (!showNotifications) resetUnread()
                                         }}
-                                        title="Уведомления"
+                                        title="Notifications"
                                     >
-                                        🔔
+                                        <Bell size={17} />
                                         {unreadCount > 0 && (
-                                            <span style={styles.notifBadge}>{unreadCount}</span>
+                                            <span style={s.notifBadge}>{unreadCount > 9 ? '9+' : unreadCount}</span>
                                         )}
                                     </button>
                                     {showNotifications && (
@@ -243,229 +207,325 @@ export default function ChatPage() {
                                     )}
                                 </div>
 
-                                <button style={styles.iconBtn} onClick={() => navigate('/ai')} title="ИИ">🤖</button>
-                                <button style={styles.iconBtn} onClick={() => setShowCreateGroup(true)} title="Группа">👥</button>
-                                <button style={styles.iconBtn} onClick={() => navigate('/profile')} title="Профиль">👤</button>
-                                <ThemeToggle />
+                                <button style={s.iconBtn} onClick={() => navigate('/ai')} title="AI Assistant">
+                                    <Bot size={17} />
+                                </button>
+                                <button style={s.iconBtn} onClick={() => setShowCreateGroup(true)} title="New group">
+                                    <Users size={17} />
+                                </button>
+                                <button style={s.iconBtn} onClick={() => navigate('/profile')} title="Profile">
+                                    <User size={17} />
+                                </button>
                             </div>
                         </>
                     ) : (
-                        <div style={styles.searchHeader}>
-                            <button style={styles.backSearchBtn} onClick={() => setSearchMode(false)}>←</button>
-                            <span style={styles.searchTitle}>Поиск пользователей</span>
+                        /* Search header */
+                        <div style={s.searchTopBar}>
+                            <button style={s.backBtn} onClick={() => setSearchMode(false)}>
+                                <X size={16} />
+                            </button>
+                            <span style={s.searchTopTitle}>Find people</span>
                         </div>
                     )}
                 </div>
 
-                {/* Язык — отдельная строка под хедером */}
+                {/* ── Lang + Status row ── */}
                 {!searchMode && (
-                    <div style={styles.langRow}>
+                    <div style={s.metaRow}>
                         <LangSwitcher />
+                        <div style={{
+                            ...s.connPill,
+                            background: connected ? 'var(--success-bg)' : 'var(--error-bg)',
+                            color: connected ? 'var(--success)' : 'var(--error)',
+                            borderColor: connected ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)',
+                        }}>
+                            <Circle size={6} fill="currentColor" />
+                            {connected ? 'Live' : 'Reconnecting'}
+                        </div>
                     </div>
                 )}
 
-                {/* Статус соединения */}
-                <div style={{
-                    ...styles.connStatus,
-                    background: connected ? '#1a2e1a' : '#2d1a1a',
-                    color: connected ? '#4ade80' : '#f87171',
-                }}>
-                    {connected ? '● Подключено' : '○ Переподключение...'}
-                </div>
+                {/* ── Search bar ── */}
+                {!searchMode && (
+                    <div style={s.searchBarWrap}>
+                        <button style={s.searchBar} onClick={() => setSearchMode(true)}>
+                            <Search size={14} color="var(--text-muted)" />
+                            <span style={s.searchPlaceholder}>Search or find people...</span>
+                        </button>
+                        <button
+                            style={s.newChatBtn}
+                            onClick={() => setShowCreateGroup(true)}
+                            title="New group"
+                        >
+                            <Plus size={15} />
+                        </button>
+                    </div>
+                )}
 
-                {/* Список чатов */}
-
-                {searchMode ? (
-                    <SearchPanel
-                        onChatOpen={(chat) => {
-                            setActiveChat(chat)
-                            setSearchMode(false)
-                            // Добавляем чат в список если его ещё нет
-                            setChats(prev =>
-                                prev.find(c => c.id === chat.id) ? prev : [chat, ...prev]
-                            )
-                        }}
-                        onClose={() => setSearchMode(false)}
-                    />
-                ) : (
-                    /* существующий список чатов */
-                    <div style={styles.chatList}>
-                        {loading ? (
-                            <div style={styles.emptyState}>Загрузка...</div>
-                        ) : chats.length === 0 ? (
-                            <div style={styles.emptyState}>
-                                Нет чатов.<br />Найдите пользователя для начала.
+                {/* ── Chats list / Search panel ── */}
+                <div style={s.listWrap}>
+                    {searchMode ? (
+                        <SearchPanel
+                            onChatOpen={(chat) => {
+                                setActiveChat(chat)
+                                setSearchMode(false)
+                                setChats(prev =>
+                                    prev.find(c => c.id === chat.id) ? prev : [chat, ...prev]
+                                )
+                            }}
+                            onClose={() => setSearchMode(false)}
+                        />
+                    ) : (
+                        <>
+                            {/* Section label */}
+                            <div style={s.sectionLabel}>
+                                <span>Messages</span>
+                                <span style={s.sectionCount}>{chats.length}</span>
                             </div>
-                        ) : (
-                            chats.map(chat => {
-                                const name = getChatName(chat)
-                                const avatar = getChatAvatar(chat)
-                                const letter = name.charAt(0).toUpperCase()
-                                const isActive = activeChat?.id === chat.id
 
-                                return (
-                                    <div
-                                        key={chat.id}
-                                        style={{
-                                            ...styles.chatItem,
-                                            background: isActive ? '#2d2d4e' : 'transparent',
-                                        }}
-                                        onClick={() => setActiveChat(chat)}
-                                    >
-                                        {/* Аватар */}
-                                        {avatar ? (
-                                            <img src={avatar} alt="" style={styles.chatAvatar} />
-                                        ) : (
-                                            <div style={styles.chatAvatarPlaceholder}>{letter}</div>
-                                        )}
-
-                                        <div style={styles.chatInfo}>
-                                            <div style={styles.chatName}>{name}</div>
-                                            <div style={styles.chatLastMsg}>
-                                                {chat.lastMessage?.deleted
-                                                    ? 'Сообщение удалено'
-                                                    : chat.lastMessage?.content || 'Нет сообщений'}
+                            {loading ? (
+                                /* Skeleton */
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '0 8px' }}>
+                                    {[1, 2, 3, 4].map(i => (
+                                        <div key={i} style={s.skeletonItem}>
+                                            <div style={s.skeletonAvatar} />
+                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                <div style={{ ...s.skeletonLine, width: '60%' }} />
+                                                <div style={{ ...s.skeletonLine, width: '85%', height: '10px' }} />
                                             </div>
                                         </div>
-
-                                        {chat.unreadCount > 0 && (
-                                            <div style={styles.unreadBadge}>{chat.unreadCount}</div>
-                                        )}
+                                    ))}
+                                </div>
+                            ) : chats.length === 0 ? (
+                                <div style={s.emptyState}>
+                                    <div style={s.emptyIcon}>
+                                        <MessageSquare size={24} color="var(--text-muted)" />
                                     </div>
-                                )
-                            })
-                        )}
+                                    <p style={s.emptyTitle}>No conversations</p>
+                                    <p style={s.emptyHint}>Search for someone to start chatting</p>
+                                </div>
+                            ) : (
+                                <div style={s.chatList}>
+                                    {chats.map(chat => {
+                                        const name = getChatName(chat)
+                                        const avatar = getChatAvatar(chat)
+                                        const status = getChatStatus(chat)
+                                        const isActive = activeChat?.id === chat.id
+                                        const isHovered = hoveredChat === chat.id
+                                        const letter = name.charAt(0).toUpperCase()
+                                        const lastMsg = chat.lastMessage
+                                        const isGroup = chat.type === 'GROUP'
+
+                                        return (
+                                            <div
+                                                key={chat.id}
+                                                style={{
+                                                    ...s.chatItem,
+                                                    background: isActive
+                                                        ? 'var(--accent-bg)'
+                                                        : isHovered ? 'var(--bg-hover)' : 'transparent',
+                                                    borderColor: isActive ? 'var(--accent-bg-hover)' : 'transparent',
+                                                }}
+                                                onClick={() => setActiveChat(chat)}
+                                                onMouseEnter={() => setHoveredChat(chat.id)}
+                                                onMouseLeave={() => setHoveredChat(null)}
+                                            >
+                                                {/* Avatar */}
+                                                <div style={s.avatarWrap}>
+                                                    {avatar ? (
+                                                        <img src={avatar} alt="" style={s.chatAvatar} />
+                                                    ) : (
+                                                        <div style={{
+                                                            ...s.chatAvatarPlaceholder,
+                                                            background: isGroup
+                                                                ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                                                                : 'linear-gradient(135deg, #6366f1, #06b6d4)',
+                                                        }}>
+                                                            {isGroup
+                                                                ? <Users size={16} color="#fff" />
+                                                                : <span style={s.avatarLetter}>{letter}</span>
+                                                            }
+                                                        </div>
+                                                    )}
+                                                    {/* Online dot */}
+                                                    {status === 'ONLINE' && (
+                                                        <div style={s.onlineDot} />
+                                                    )}
+                                                </div>
+
+                                                {/* Info */}
+                                                <div style={s.chatInfo}>
+                                                    <div style={s.chatTopRow}>
+                                                        <span style={{
+                                                            ...s.chatName,
+                                                            color: isActive ? 'var(--accent-light)' : 'var(--text-primary)',
+                                                        }}>
+                                                            {name}
+                                                        </span>
+                                                        <span style={s.chatTime}>
+                                                            {lastMsg ? formatTime(lastMsg.createdAt) : ''}
+                                                        </span>
+                                                    </div>
+                                                    <div style={s.chatBottomRow}>
+                                                        <span style={{
+                                                            ...s.chatPreview,
+                                                            fontStyle: lastMsg?.deleted ? 'italic' : 'normal',
+                                                            color: chat.unreadCount > 0
+                                                                ? 'var(--text-secondary)'
+                                                                : 'var(--text-muted)',
+                                                        }}>
+                                                            {lastMsg?.deleted
+                                                                ? 'Message deleted'
+                                                                : lastMsg?.content || 'No messages yet'}
+                                                        </span>
+                                                        {chat.unreadCount > 0 && (
+                                                            <span style={s.unreadBadge}>
+                                                                {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+
+                {/* ── Bottom nav ── */}
+                {!searchMode && (
+                    <div style={s.bottomNav}>
+                        <button style={s.navBtn} onClick={() => navigate('/profile')}>
+                            {me?.avatarUrl ? (
+                                <img src={me.avatarUrl} alt="" style={s.navAvatar} />
+                            ) : (
+                                <div style={s.navAvatarPlaceholder}>
+                                    {me?.fullName?.charAt(0)?.toUpperCase()}
+                                </div>
+                            )}
+                            <div style={s.navInfo}>
+                                <span style={s.navName}>{me?.fullName}</span>
+                                <span style={s.navHandle}>@{me?.username}</span>
+                            </div>
+                            <ChevronRight size={14} color="var(--text-muted)" />
+                        </button>
                     </div>
                 )}
-            </div>
+            </aside>
 
-            {/* ── Чат ─────────────────────────────────── */}
-            <div style={styles.chatArea}>
+            {/* ══════════════ CHAT AREA (unchanged shell — filled in Part 4) ══════════════ */}
+            <div style={s.chatArea}>
                 {!activeChat ? (
-                    <div style={styles.noChatSelected}>
-                        <div style={styles.noChatIcon}>💬</div>
-                        <div style={styles.noChatText}>Выберите чат</div>
-                        <div style={styles.noChatSub}>или найдите пользователя для начала переписки</div>
+                    <div style={s.noChatSelected}>
+                        <div style={s.noChatIconWrap}>
+                            <MessageSquare size={32} color="var(--text-muted)" strokeWidth={1.5} />
+                        </div>
+                        <p style={s.noChatTitle}>Select a conversation</p>
+                        <p style={s.noChatSub}>or search for someone to message</p>
                     </div>
                 ) : (
                     <>
-                        {/* Хедер чата */}
-                        <div style={styles.chatHeader}>
-                            {/* Левая часть: Аватар и информация */}
-                            <div style={styles.chatHeaderInfo}>
+                        {/* Chat header */}
+                        <div style={s.chatHeader}>
+                            <div style={s.chatHeaderLeft}>
                                 {getChatAvatar(activeChat) ? (
-                                    <img src={getChatAvatar(activeChat)} style={styles.chatHeaderAvatar} alt="" />
+                                    <img src={getChatAvatar(activeChat)} style={s.headerAvatar} alt="" />
                                 ) : (
-                                    <div style={styles.chatHeaderAvatarPlaceholder}>
-                                        {getChatName(activeChat).charAt(0)}
+                                    <div style={{
+                                        ...s.headerAvatarPlaceholder,
+                                        background: activeChat.type === 'GROUP'
+                                            ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                                            : 'linear-gradient(135deg, #6366f1, #06b6d4)',
+                                    }}>
+                                        {activeChat.type === 'GROUP'
+                                            ? <Users size={15} color="#fff" />
+                                            : <span style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>
+                                                {getChatName(activeChat).charAt(0)}
+                                            </span>
+                                        }
                                     </div>
                                 )}
                                 <div>
-                                    <div style={styles.chatHeaderName}>{getChatName(activeChat)}</div>
-                                    <div style={styles.chatHeaderStatus}>
-                                        {isTyping ? (
-                                            <span style={{ color: '#7c6af7' }}>печатает...</span>
-                                        ) : 'в сети'}
+                                    <div style={s.headerName}>{getChatName(activeChat)}</div>
+                                    <div style={s.headerSub}>
+                                        {isTyping
+                                            ? <span style={{ color: 'var(--accent-light)' }}>typing...</span>
+                                            : getChatStatus(activeChat) === 'ONLINE'
+                                                ? <span style={{ color: 'var(--success)' }}>Online</span>
+                                                : <span>Offline</span>
+                                        }
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Правая часть: Кнопка настроек группы */}
                             {activeChat?.type === 'GROUP' && (
                                 <button
-                                    style={styles.settingsBtn}
+                                    style={s.headerActionBtn}
                                     onClick={() => navigate(`/groups/${activeChat.id}/settings`)}
-                                    title="Настройки группы"
                                 >
-                                    ⚙️
+                                    <Settings size={16} />
                                 </button>
                             )}
                         </div>
 
-                        {/* Сообщения */}
-                        <div style={styles.messages}>
+                        {/* Messages */}
+                        <div style={s.messages}>
                             {messages.map(msg => {
                                 const isMine = msg.senderId === me?.id
                                 return (
-                                    <div
-                                        key={msg.id}
-                                        style={{
-                                            ...styles.messageRow,
-                                            justifyContent: isMine ? 'flex-end' : 'flex-start',
-                                        }}
-                                    >
-                                        <div style={{
-                                            ...styles.bubble,
-                                            background: isMine ? '#7c6af7' : '#1e1e38',
-                                            borderRadius: isMine
-                                                ? '18px 18px 4px 18px'
-                                                : '18px 18px 18px 4px',
-                                            opacity: msg.deleted ? 0.5 : 1,
-                                        }}>
-                                            {/* Имя отправителя в группе */}
-                                            {!isMine && activeChat.type === 'GROUP' && (
-                                                <div style={styles.bubbleSender}>{msg.senderName}</div>
-                                            )}
-
-                                            <div style={styles.bubbleText}>{msg.content}</div>
-                                            <div style={{
-                                                ...styles.bubble,
-                                                background: isMine ? '#7c6af7' : '#1e1e38',
-                                                borderRadius: isMine
-                                                    ? '18px 18px 4px 18px'
-                                                    : '18px 18px 18px 4px',
-                                                opacity: msg.deleted ? 0.5 : 1,
-                                            }}>
-                                                {/* Имя отправителя в группе */}
-                                                {!isMine && activeChat.type === 'GROUP' && (
-                                                    <div style={styles.bubbleSender}>{msg.senderName}</div>
-                                                )}
-
-                                                {/* Текст сообщения */}
-                                                <div style={styles.bubbleText}>{msg.content}</div>
-
-                                                {/* ── Кнопка перевода (только чужие сообщения) ── */}
-                                                {!isMine && !msg.deleted && (
-                                                    <TranslateButton
-                                                        text={msg.content}
-                                                        isMine={false}
-                                                    />
-                                                )}
-
-                                                {/* Мета: время + птички + удалить */}
-                                                <div style={styles.bubbleMeta}>
-                                                    <span style={styles.bubbleTime}>
-                                                        {new Date(msg.createdAt).toLocaleTimeString('ru-RU', {
-                                                            hour: '2-digit', minute: '2-digit'
-                                                        })}
-                                                    </span>
-                                                    {msg.senderId === me?.id && (
-                                                        <MessageTicks status={msg.status} />
-                                                    )}
-                                                    {isMine && !msg.deleted && (
-                                                        <button
-                                                            style={styles.deleteBtn}
-                                                            onClick={() => handleDeleteMsg(msg.id)}
-                                                            title="Удалить"
-                                                        >✕</button>
-                                                    )}
-                                                </div>
+                                    <div key={msg.id} style={{
+                                        ...s.messageRow,
+                                        justifyContent: isMine ? 'flex-end' : 'flex-start',
+                                    }}>
+                                        {!isMine && (
+                                            <div style={s.msgAvatar}>
+                                                {msg.senderAvatar
+                                                    ? <img src={msg.senderAvatar} style={s.msgAvatarImg} alt="" />
+                                                    : <div style={s.msgAvatarPlaceholder}>
+                                                        {msg.senderName?.charAt(0)}
+                                                    </div>
+                                                }
                                             </div>
-                                            <div style={styles.bubbleMeta}>
-                                                <span style={styles.bubbleTime}>
-                                                    {new Date(msg.createdAt).toLocaleTimeString('ru-RU', {
+                                        )}
+                                        <div style={{
+                                            ...s.bubble,
+                                            background: isMine ? 'var(--bubble-mine)' : 'var(--bubble-other)',
+                                            borderRadius: isMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                                            border: isMine ? 'none' : '1px solid var(--border)',
+                                            opacity: msg.temp ? 0.7 : 1,
+                                        }}>
+                                            {!isMine && activeChat.type === 'GROUP' && (
+                                                <div style={s.bubbleSender}>{msg.senderName}</div>
+                                            )}
+                                            <div style={{
+                                                ...s.bubbleText,
+                                                color: isMine ? '#fff' : 'var(--text-primary)',
+                                                fontStyle: msg.deleted ? 'italic' : 'normal',
+                                                opacity: msg.deleted ? 0.6 : 1,
+                                            }}>
+                                                {msg.content}
+                                            </div>
+                                            {!isMine && !msg.deleted && (
+                                                <TranslateButton text={msg.content} isMine={false} />
+                                            )}
+                                            <div style={s.bubbleMeta}>
+                                                <span style={{
+                                                    ...s.bubbleTime,
+                                                    color: isMine ? 'rgba(255,255,255,0.5)' : 'var(--text-muted)',
+                                                }}>
+                                                    {new Date(msg.createdAt).toLocaleTimeString([], {
                                                         hour: '2-digit', minute: '2-digit'
                                                     })}
                                                 </span>
-                                                {msg.senderId === me?.id && (
-                                                    <MessageTicks status={msg.status} />
-                                                )}
+                                                {isMine && <MessageTicks status={msg.status} />}
                                                 {isMine && !msg.deleted && (
                                                     <button
-                                                        style={styles.deleteBtn}
+                                                        style={s.deleteMsgBtn}
                                                         onClick={() => handleDeleteMsg(msg.id)}
-                                                        title="Удалить"
-                                                    >✕</button>
+                                                    >
+                                                        <Trash2 size={11} />
+                                                    </button>
                                                 )}
                                             </div>
                                         </div>
@@ -475,267 +535,666 @@ export default function ChatPage() {
                             <div ref={messagesEndRef} />
                         </div>
 
-                        {/* Инпут */}
-                        {/* Инпут */}
-                        <div style={styles.inputArea}>
-                            <div style={styles.inputWrapper}>
+                        {/* Input */}
+                        <div style={s.inputArea}>
+                            <div style={s.inputWrap}>
                                 <textarea
-                                    style={styles.messageInput}
+                                    style={s.messageInput}
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    placeholder="Напишите сообщение..."
+                                    placeholder="Write a message..."
                                     rows={1}
                                 />
-                                {/* Предупреждение о мате */}
                                 {hasProfanity(input) && (
-                                    <div style={styles.profanityWarning}>
-                                        ⚠️ Сообщение содержит запрещённые слова — они будут заменены на ****
+                                    <div style={s.profanityWarn}>
+                                        Inappropriate words will be filtered
                                     </div>
                                 )}
                             </div>
                             <button
                                 style={{
-                                    ...styles.sendBtn,
-                                    opacity: input.trim() ? 1 : 0.5,
+                                    ...s.sendBtn,
+                                    opacity: input.trim() ? 1 : 0.35,
+                                    boxShadow: input.trim() ? 'var(--shadow-accent)' : 'none',
                                 }}
                                 onClick={handleSend}
                                 disabled={!input.trim()}
                             >
-                                ➤
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                    <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"
+                                        stroke="#fff" strokeWidth="2"
+                                        strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
                             </button>
                         </div>
                     </>
                 )}
             </div>
+
             {showCreateGroup && (
                 <CreateGroupModal
                     onClose={() => setShowCreateGroup(false)}
-                    onCreate={(group) => {
-                        fetchChats()
-                        setShowCreateGroup(false)
-                    }}
+                    onCreate={() => { fetchChats(); setShowCreateGroup(false) }}
                 />
             )}
         </div>
     )
 }
 
-const styles = {
+/* ─────────────────────────── Styles ─────────────────────────── */
+const s = {
     page: {
-        display: 'flex', height: '100vh',
+        display: 'flex',
+        height: '100vh',
         background: 'var(--bg-primary)',
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        fontFamily: "'Inter', sans-serif",
         color: 'var(--text-primary)',
         overflow: 'hidden',
     },
+
+    /* ── Sidebar ── */
     sidebar: {
-        width: '320px', minWidth: '320px',
+        width: '300px',
+        minWidth: '300px',
         background: 'var(--bg-secondary)',
         borderRight: '1px solid var(--border)',
-        display: 'flex', flexDirection: 'column',
+        display: 'flex',
+        flexDirection: 'column',
         overflow: 'hidden',
     },
-   sidebarHeader: {
-  padding: '10px 12px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  borderBottom: '1px solid var(--border)',
-  minHeight: '52px',
-  gap: '8px',
-},
+    topBar: {
+        padding: '14px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottom: '1px solid var(--border)',
+        minHeight: '56px',
+        gap: '8px',
+    },
+    logoWrap: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '9px',
+        flexShrink: 0,
+    },
+    logoIcon: {
+        width: '28px',
+        height: '28px',
+        borderRadius: '8px',
+        background: 'var(--accent-bg)',
+        border: '1px solid var(--accent-bg-hover)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    logoText: {
+        fontSize: '15px',
+        fontWeight: '700',
+        color: 'var(--text-primary)',
+        letterSpacing: '-0.03em',
+    },
+    topActions: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '2px',
+    },
+    iconBtn: {
+        background: 'transparent',
+        border: 'none',
+        borderRadius: '8px',
+        padding: '7px',
+        cursor: 'pointer',
+        color: 'var(--text-secondary)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        transition: 'background 0.15s, color 0.15s',
+        flexShrink: 0,
+    },
+    notifBadge: {
+        position: 'absolute',
+        top: '2px',
+        right: '2px',
+        background: 'var(--error)',
+        color: '#fff',
+        borderRadius: '999px',
+        padding: '1px 4px',
+        fontSize: '9px',
+        fontWeight: '700',
+        lineHeight: '1.4',
+        minWidth: '14px',
+        textAlign: 'center',
+    },
+    searchTopBar: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        flex: 1,
+    },
+    backBtn: {
+        background: 'var(--bg-hover)',
+        border: '1px solid var(--border)',
+        borderRadius: '8px',
+        padding: '6px',
+        cursor: 'pointer',
+        color: 'var(--text-secondary)',
+        display: 'flex',
+        alignItems: 'center',
+    },
+    searchTopTitle: {
+        fontSize: '15px',
+        fontWeight: '600',
+        color: 'var(--text-primary)',
+        letterSpacing: '-0.02em',
+    },
 
-    sidebarActions: {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '1px',
-  flexShrink: 0,
-},
-
-iconBtn: {
-  background: 'transparent',
-  border: 'none',
-  borderRadius: '7px',
-  padding: '5px 6px',
-  cursor: 'pointer',
-  fontSize: '15px',
-  color: 'var(--text-secondary)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  position: 'relative',
-  transition: 'background 0.15s',
-  flexShrink: 0,
-},
-logo: {
-  fontSize: '18px',
-  fontWeight: '900',
-  color: 'var(--accent)',
-  letterSpacing: '-1px',
-  flexShrink: 0,
-},
-    langRow: {
-        padding: '6px 16px',
+    /* Meta row */
+    metaRow: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '8px 16px',
         borderBottom: '1px solid var(--border)',
     },
-    connStatus: {
-        padding: '4px 16px',
-        fontSize: '11px', fontWeight: '600',
+    connPill: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '5px',
+        padding: '3px 9px',
+        borderRadius: '999px',
+        fontSize: '11px',
+        fontWeight: '600',
+        border: '1px solid',
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
     },
-    chatList: {
-        flex: 1, overflowY: 'auto', padding: '8px 0',
+
+    /* Search bar */
+    searchBarWrap: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '10px 12px',
+        borderBottom: '1px solid var(--border)',
     },
-    emptyState: {
-        padding: '40px 20px', textAlign: 'center',
-        color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.6',
+    searchBar: {
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        background: 'var(--bg-tertiary)',
+        border: '1px solid var(--border)',
+        borderRadius: '10px',
+        padding: '8px 12px',
+        cursor: 'text',
+        textAlign: 'left',
     },
-    chatItem: {
-        display: 'flex', alignItems: 'center', gap: '12px',
-        padding: '12px 16px', cursor: 'pointer',
-        borderRadius: '10px', margin: '2px 8px',
+    searchPlaceholder: {
+        fontSize: '13px',
+        color: 'var(--text-muted)',
+        fontWeight: '400',
+    },
+    newChatBtn: {
+        background: 'var(--accent-bg)',
+        border: '1px solid var(--accent-bg-hover)',
+        borderRadius: '10px',
+        padding: '8px',
+        cursor: 'pointer',
+        color: 'var(--accent)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
         transition: 'background 0.15s',
     },
+
+    /* List */
+    listWrap: {
+        flex: 1,
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+    },
+    sectionLabel: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '12px 16px 6px',
+        fontSize: '11px',
+        fontWeight: '600',
+        color: 'var(--text-muted)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.06em',
+    },
+    sectionCount: {
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border)',
+        borderRadius: '999px',
+        padding: '1px 7px',
+        fontSize: '10px',
+        fontWeight: '700',
+        color: 'var(--text-muted)',
+    },
+
+    /* Skeleton */
+    skeletonItem: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '10px 8px',
+        borderRadius: '12px',
+    },
+    skeletonAvatar: {
+        width: '44px', height: '44px',
+        borderRadius: '14px',
+        background: 'var(--bg-elevated)',
+        flexShrink: 0,
+        animation: 'shimmer 1.4s infinite',
+        backgroundImage: 'linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-hover) 50%, var(--bg-elevated) 75%)',
+        backgroundSize: '200% 100%',
+    },
+    skeletonLine: {
+        height: '12px',
+        borderRadius: '6px',
+        backgroundImage: 'linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-hover) 50%, var(--bg-elevated) 75%)',
+        backgroundSize: '200% 100%',
+        animation: 'shimmer 1.4s infinite',
+    },
+
+    /* Empty */
+    emptyState: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '10px',
+        padding: '48px 24px',
+        flex: 1,
+    },
+    emptyIcon: {
+        width: '48px', height: '48px',
+        borderRadius: '14px',
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '4px',
+    },
+    emptyTitle: {
+        fontSize: '14px',
+        fontWeight: '600',
+        color: 'var(--text-secondary)',
+    },
+    emptyHint: {
+        fontSize: '13px',
+        color: 'var(--text-muted)',
+        textAlign: 'center',
+    },
+
+    /* Chat items */
+    chatList: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2px',
+        padding: '4px 8px',
+    },
+    chatItem: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '11px',
+        padding: '9px 10px',
+        borderRadius: '12px',
+        cursor: 'pointer',
+        border: '1px solid transparent',
+        transition: 'background 0.12s, border-color 0.12s',
+    },
+    avatarWrap: {
+        position: 'relative',
+        flexShrink: 0,
+    },
     chatAvatar: {
-        width: '46px', height: '46px',
-        borderRadius: '50%', objectFit: 'cover', flexShrink: 0,
+        width: '44px', height: '44px',
+        borderRadius: '14px',
+        objectFit: 'cover',
     },
     chatAvatarPlaceholder: {
-        width: '46px', height: '46px', borderRadius: '50%',
-        background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '18px', fontWeight: '800', color: '#fff', flexShrink: 0,
+        width: '44px', height: '44px',
+        borderRadius: '14px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    chatInfo: { flex: 1, minWidth: 0 },
+    avatarLetter: {
+        fontSize: '16px',
+        fontWeight: '700',
+        color: '#fff',
+        letterSpacing: '-0.02em',
+    },
+    onlineDot: {
+        position: 'absolute',
+        bottom: '1px', right: '1px',
+        width: '10px', height: '10px',
+        borderRadius: '50%',
+        background: 'var(--success)',
+        border: '2px solid var(--bg-secondary)',
+        boxShadow: '0 0 6px var(--success)',
+    },
+    chatInfo: {
+        flex: 1,
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '3px',
+    },
+    chatTopRow: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '8px',
+    },
     chatName: {
-        fontSize: '15px', fontWeight: '600',
-        color: 'var(--text-primary)', marginBottom: '2px',
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        fontSize: '14px',
+        fontWeight: '600',
+        letterSpacing: '-0.01em',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        transition: 'color 0.12s',
     },
-    chatLastMsg: {
-        fontSize: '13px', color: 'var(--text-muted)',
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+    chatTime: {
+        fontSize: '11px',
+        color: 'var(--text-muted)',
+        flexShrink: 0,
+        fontVariantNumeric: 'tabular-nums',
+    },
+    chatBottomRow: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '8px',
+    },
+    chatPreview: {
+        fontSize: '13px',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        flex: 1,
+        minWidth: 0,
+        transition: 'color 0.12s',
     },
     unreadBadge: {
-        background: 'var(--accent)', color: '#fff',
-        borderRadius: '10px', padding: '2px 7px',
-        fontSize: '12px', fontWeight: '700', flexShrink: 0,
+        background: 'var(--accent)',
+        color: '#fff',
+        borderRadius: '999px',
+        padding: '2px 7px',
+        fontSize: '10px',
+        fontWeight: '700',
+        flexShrink: 0,
+        minWidth: '18px',
+        textAlign: 'center',
     },
+
+    /* Bottom nav */
+    bottomNav: {
+        borderTop: '1px solid var(--border)',
+        padding: '10px 12px',
+    },
+    navBtn: {
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        background: 'var(--bg-glass)',
+        border: '1px solid var(--border)',
+        borderRadius: '12px',
+        padding: '10px 12px',
+        cursor: 'pointer',
+        transition: 'background 0.15s',
+    },
+    navAvatar: {
+        width: '34px', height: '34px',
+        borderRadius: '10px',
+        objectFit: 'cover',
+        flexShrink: 0,
+    },
+    navAvatarPlaceholder: {
+        width: '34px', height: '34px',
+        borderRadius: '10px',
+        background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '13px',
+        fontWeight: '700',
+        color: '#fff',
+        flexShrink: 0,
+    },
+    navInfo: {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2px',
+        textAlign: 'left',
+        minWidth: 0,
+    },
+    navName: {
+        fontSize: '13px',
+        fontWeight: '600',
+        color: 'var(--text-primary)',
+        letterSpacing: '-0.01em',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+    },
+    navHandle: {
+        fontSize: '11px',
+        color: 'var(--text-muted)',
+    },
+
+    /* ── Chat area ── */
     chatArea: {
-        flex: 1, display: 'flex',
-        flexDirection: 'column', overflow: 'hidden',
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
         background: 'var(--bg-primary)',
     },
     noChatSelected: {
-        flex: 1, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', gap: '12px',
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px',
     },
-    noChatIcon: { fontSize: '64px', opacity: 0.2 },
-    noChatText: { fontSize: '20px', fontWeight: '700', color: 'var(--text-muted)' },
-    noChatSub: { fontSize: '14px', color: 'var(--text-muted)' },
+    noChatIconWrap: {
+        width: '64px', height: '64px',
+        borderRadius: '20px',
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '4px',
+    },
+    noChatTitle: {
+        fontSize: '16px',
+        fontWeight: '600',
+        color: 'var(--text-secondary)',
+        letterSpacing: '-0.02em',
+    },
+    noChatSub: {
+        fontSize: '13px',
+        color: 'var(--text-muted)',
+    },
     chatHeader: {
         padding: '14px 20px',
         borderBottom: '1px solid var(--border)',
         background: 'var(--bg-secondary)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
-    chatHeaderInfo: { display: 'flex', alignItems: 'center', gap: '12px' },
-    chatHeaderAvatar: {
-        width: '40px', height: '40px',
-        borderRadius: '50%', objectFit: 'cover',
+    chatHeaderLeft: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
     },
-    chatHeaderAvatarPlaceholder: {
-        width: '40px', height: '40px', borderRadius: '50%',
-        background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '16px', fontWeight: '800', color: '#fff',
+    headerAvatar: {
+        width: '38px', height: '38px',
+        borderRadius: '12px',
+        objectFit: 'cover',
     },
-    chatHeaderName: { fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)' },
-    chatHeaderStatus: { fontSize: '12px', color: 'var(--success)' },
-    settingsBtn: {
-        background: 'var(--bg-elevated)', border: 'none',
-        borderRadius: '8px', padding: '6px 10px',
-        cursor: 'pointer', fontSize: '16px',
+    headerAvatarPlaceholder: {
+        width: '38px', height: '38px',
+        borderRadius: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    headerName: {
+        fontSize: '15px',
+        fontWeight: '600',
+        color: 'var(--text-primary)',
+        letterSpacing: '-0.02em',
+    },
+    headerSub: {
+        fontSize: '12px',
+        color: 'var(--text-muted)',
+        marginTop: '1px',
+    },
+    headerActionBtn: {
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border)',
+        borderRadius: '10px',
+        padding: '8px',
+        cursor: 'pointer',
+        color: 'var(--text-secondary)',
+        display: 'flex',
+        alignItems: 'center',
+        transition: 'background 0.15s',
     },
     messages: {
-        flex: 1, overflowY: 'auto',
-        padding: '20px 16px',
-        display: 'flex', flexDirection: 'column', gap: '8px',
+        flex: 1,
+        overflowY: 'auto',
+        padding: '20px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px',
     },
     messageRow: {
-        display: 'flex', alignItems: 'flex-end',
-        animation: 'fadeIn 0.2s ease',
+        display: 'flex',
+        alignItems: 'flex-end',
+        gap: '8px',
+        animation: 'fadeUp 0.15s ease forwards',
+    },
+    msgAvatar: { flexShrink: 0 },
+    msgAvatarImg: {
+        width: '28px', height: '28px',
+        borderRadius: '8px',
+        objectFit: 'cover',
+    },
+    msgAvatarPlaceholder: {
+        width: '28px', height: '28px',
+        borderRadius: '8px',
+        background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '11px',
+        fontWeight: '700',
+        color: '#fff',
     },
     bubble: {
-        maxWidth: '65%', padding: '10px 14px',
-        fontSize: '15px', lineHeight: '1.5', wordBreak: 'break-word',
-        boxShadow: 'var(--shadow-sm)',
+        maxWidth: '62%',
+        padding: '10px 14px',
+        fontSize: '14px',
+        lineHeight: '1.55',
+        wordBreak: 'break-word',
+        boxShadow: 'var(--shadow-xs)',
     },
     bubbleSender: {
-        fontSize: '12px', fontWeight: '700',
-        color: 'var(--accent-light)', marginBottom: '4px',
+        fontSize: '11px',
+        fontWeight: '700',
+        color: 'var(--accent-light)',
+        marginBottom: '4px',
+        letterSpacing: '-0.01em',
     },
-    bubbleText: { color: '#fff' },
+    bubbleText: {
+        fontWeight: '400',
+    },
     bubbleMeta: {
-        display: 'flex', alignItems: 'center',
-        gap: '4px', justifyContent: 'flex-end', marginTop: '4px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '5px',
+        justifyContent: 'flex-end',
+        marginTop: '5px',
     },
-    bubbleTime: { fontSize: '11px', color: 'rgba(255,255,255,0.5)' },
-    deleteBtn: {
-        background: 'transparent', border: 'none',
-        color: 'rgba(255,255,255,0.3)', cursor: 'pointer',
-        fontSize: '11px', padding: '0 2px',
+    bubbleTime: {
+        fontSize: '11px',
+        fontVariantNumeric: 'tabular-nums',
+    },
+    deleteMsgBtn: {
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        color: 'rgba(255,255,255,0.35)',
+        padding: '1px',
+        display: 'flex',
+        alignItems: 'center',
+        transition: 'color 0.15s',
     },
     inputArea: {
-        padding: '12px 16px',
+        padding: '12px 20px',
         borderTop: '1px solid var(--border)',
         background: 'var(--bg-secondary)',
-        display: 'flex', gap: '10px', alignItems: 'flex-end',
+        display: 'flex',
+        gap: '10px',
+        alignItems: 'flex-end',
     },
-    inputWrapper: {
-        flex: 1, display: 'flex', flexDirection: 'column', gap: '4px',
+    inputWrap: {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px',
     },
     messageInput: {
-        flex: 1, background: 'var(--bg-elevated)',
-        border: '1px solid var(--border-light)',
-        borderRadius: '12px', padding: '12px 16px',
-        color: 'var(--text-primary)', fontSize: '15px',
-        outline: 'none', resize: 'none',
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
-        maxHeight: '120px', lineHeight: '1.5',
-        transition: 'border-color 0.2s',
+        width: '100%',
+        background: 'var(--bg-tertiary)',
+        border: '1px solid var(--border)',
+        borderRadius: '12px',
+        padding: '11px 16px',
+        color: 'var(--text-primary)',
+        fontSize: '14px',
+        outline: 'none',
+        resize: 'none',
+        fontFamily: "'Inter', sans-serif",
+        maxHeight: '120px',
+        lineHeight: '1.5',
+        transition: 'border-color 0.15s',
     },
-    profanityWarning: {
+    profanityWarn: {
+        fontSize: '11px',
+        color: 'var(--warning)',
+        padding: '4px 10px',
         background: 'var(--warning-bg)',
-        border: '1px solid var(--warning)',
-        color: 'var(--warning)', borderRadius: '8px',
-        padding: '6px 12px', fontSize: '12px',
+        borderRadius: '6px',
+        border: '1px solid rgba(245,158,11,0.2)',
     },
     sendBtn: {
-        background: 'var(--accent)', border: 'none',
-        borderRadius: '12px', width: '46px', height: '46px',
-        color: '#fff', fontSize: '18px', cursor: 'pointer',
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'center', flexShrink: 0,
-        transition: 'opacity 0.2s, transform 0.1s',
-        boxShadow: 'var(--shadow-sm)',
-    },
-    notifBadge: {
-        position: 'absolute', top: '-4px', right: '-4px',
-        background: 'var(--error)', color: '#fff',
-        borderRadius: '10px', padding: '1px 5px',
-        fontSize: '10px', fontWeight: '700',
-        minWidth: '16px', textAlign: 'center',
-    },
-    searchHeader: {
-        display: 'flex', alignItems: 'center', gap: '12px', flex: 1,
-    },
-    backSearchBtn: {
-        background: 'transparent', border: 'none',
-        color: 'var(--accent)', fontSize: '20px',
-        cursor: 'pointer', padding: '0 4px', lineHeight: 1,
-    },
-    searchTitle: {
-        fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)',
+        background: 'var(--accent)',
+        border: 'none',
+        borderRadius: '12px',
+        width: '44px',
+        height: '44px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        transition: 'opacity 0.15s, transform 0.1s',
     },
 }

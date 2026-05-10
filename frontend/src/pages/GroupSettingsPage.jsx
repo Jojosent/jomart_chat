@@ -7,6 +7,12 @@ import {
 } from '../api/group'
 import { searchUsers } from '../api/user'
 import useAuthStore from '../store/authStore'
+import {
+    ArrowLeft, Camera, Edit3, Check, X,
+    Users, Crown, UserMinus, LogOut, Trash2,
+    Search, ShieldAlert, ChevronRight, UserPlus
+} from 'lucide-react'
+import { LangSwitcher } from '../components/LangSwitcher'
 
 export default function GroupSettingsPage() {
     const { id } = useParams()
@@ -22,12 +28,8 @@ export default function GroupSettingsPage() {
     const [editMode, setEditMode] = useState(false)
     const [form, setForm] = useState({ name: '', description: '' })
     const [avatarLoading, setAvatarLoading] = useState(false)
-
-    // Поиск для добавления участников
     const [searchQuery, setSearchQuery] = useState('')
     const [searchResults, setSearchResults] = useState([])
-
-    // Модалки подтверждения
     const [confirmLeave, setConfirmLeave] = useState(false)
     const [confirmDelete, setConfirmDelete] = useState(false)
     const [transferTo, setTransferTo] = useState(null)
@@ -41,7 +43,6 @@ export default function GroupSettingsPage() {
         const t = setTimeout(async () => {
             try {
                 const res = await searchUsers(searchQuery)
-                // Убираем уже участников
                 const memberIds = group?.members?.map(m => m.id) || []
                 setSearchResults(res.data.filter(u => !memberIds.includes(u.id)))
             } catch { setSearchResults([]) }
@@ -54,272 +55,222 @@ export default function GroupSettingsPage() {
             const res = await getGroup(id)
             setGroup(res.data)
             setForm({ name: res.data.name, description: res.data.description || '' })
-        } catch {
-            setError('Failed to load group')
-        } finally {
-            setLoading(false)
-        }
+        } catch { setError('Failed to load group') }
+        finally { setLoading(false) }
     }
 
-    const showSuccess = (msg) => {
-        setSuccess(msg)
-        setTimeout(() => setSuccess(''), 3000)
+    const flash = (msg, type = 'success') => {
+        if (type === 'success') { setSuccess(msg); setTimeout(() => setSuccess(''), 3000) }
+        else setError(msg)
     }
 
-    // ── Сохранить изменения ──────────────────────────────────────
     const handleSave = async () => {
         setSaving(true); setError('')
         try {
             const res = await updateGroup(id, form)
-            setGroup(res.data)
-            setEditMode(false)
-            showSuccess('Group updated!')
-        } catch (err) {
-            setError(err.response?.data?.message || 'Update failed')
-        } finally { setSaving(false) }
+            setGroup(res.data); setEditMode(false); flash('Group updated')
+        } catch (err) { flash(err.response?.data?.message || 'Update failed', 'error') }
+        finally { setSaving(false) }
     }
 
-    // ── Аватар ───────────────────────────────────────────────────
     const handleAvatarChange = async (e) => {
-        const file = e.target.files[0]
-        if (!file) return
+        const file = e.target.files[0]; if (!file) return
         setAvatarLoading(true)
         try {
             const res = await uploadGroupAvatar(id, file)
-            setGroup(res.data)
-            showSuccess('Avatar updated!')
-        } catch (err) {
-            setError(err.response?.data?.message || 'Upload failed')
-        } finally { setAvatarLoading(false) }
+            setGroup(res.data); flash('Photo updated')
+        } catch (err) { flash(err.response?.data?.message || 'Upload failed', 'error') }
+        finally { setAvatarLoading(false) }
     }
 
-    // ── Добавить участника ───────────────────────────────────────
     const handleAddMember = async (user) => {
         try {
             const res = await addMember(id, user.id)
-            setGroup(res.data)
-            setSearchQuery('')
-            setSearchResults([])
-            showSuccess(`${user.fullName} added!`)
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to add member')
-        }
+            setGroup(res.data); setSearchQuery(''); setSearchResults([])
+            flash(`${user.fullName} added`)
+        } catch (err) { flash(err.response?.data?.message || 'Failed', 'error') }
     }
 
-    // ── Удалить участника ────────────────────────────────────────
-    const handleRemoveMember = async (userId, userName) => {
+    const handleRemoveMember = async (userId, name) => {
         try {
             const res = await removeMember(id, userId)
-            setGroup(res.data)
-            showSuccess(`${userName} removed`)
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to remove member')
-        }
+            setGroup(res.data); flash(`${name} removed`)
+        } catch (err) { flash(err.response?.data?.message || 'Failed', 'error') }
     }
 
-    // ── Передать права ───────────────────────────────────────────
     const handleTransferAdmin = async () => {
         if (!transferTo) return
         try {
             const res = await transferAdmin(id, transferTo.id)
-            setGroup(res.data)
-            setTransferTo(null)
-            showSuccess(`Admin rights transferred to ${transferTo.fullName}`)
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to transfer admin')
-        }
+            setGroup(res.data); setTransferTo(null)
+            flash(`Admin transferred to ${transferTo.fullName}`)
+        } catch (err) { flash(err.response?.data?.message || 'Failed', 'error') }
     }
 
-    // ── Выйти ────────────────────────────────────────────────────
     const handleLeave = async () => {
-        try {
-            await leaveGroup(id)
-            navigate('/chat')
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to leave group')
-            setConfirmLeave(false)
-        }
+        try { await leaveGroup(id); navigate('/chat') }
+        catch (err) { flash(err.response?.data?.message || 'Failed', 'error'); setConfirmLeave(false) }
     }
 
-    // ── Удалить группу ───────────────────────────────────────────
     const handleDelete = async () => {
-        try {
-            await deleteGroup(id)
-            navigate('/chat')
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to delete group')
-            setConfirmDelete(false)
-        }
+        try { await deleteGroup(id); navigate('/chat') }
+        catch (err) { flash(err.response?.data?.message || 'Failed', 'error'); setConfirmDelete(false) }
     }
 
     if (loading) return (
-        <div style={styles.loadingPage}>
-            <div style={styles.spinner}>⟳</div>
+        <div style={s.loadingPage}>
+            <div style={s.spinner} />
         </div>
     )
 
     const avatarLetter = group?.name?.charAt(0)?.toUpperCase() || 'G'
 
     return (
-        <div style={styles.page}>
-
-            {/* Хедер */}
-            <div style={styles.header}>
-                <button style={styles.backBtn} onClick={() => navigate('/chat')}>
-                    ← Назад
+        <div style={s.page}>
+            {/* Header */}
+            <header style={s.header}>
+                <button style={s.backBtn} onClick={() => navigate('/chat')}>
+                    <ArrowLeft size={16} />
+                    Back
                 </button>
-                <span style={styles.headerTitle}>Настройки группы</span>
-                <div style={{ width: '60px' }} />
-            </div>
+                <span style={s.headerTitle}>Group settings</span>
+                <div style={{ width: 72 }} />
+            </header>
 
-            <div style={styles.container}>
+            <div style={s.body}>
+                {/* Toasts */}
+                {error && <div style={s.toast('error')}><div style={s.toastDot('error')} />{error}</div>}
+                {success && <div style={s.toast('success')}><div style={s.toastDot('success')} />{success}</div>}
 
-                {/* Уведомления */}
-                {error && <div style={styles.error}>{error}</div>}
-                {success && <div style={styles.successMsg}>{success}</div>}
-
-                {/* Аватар группы */}
-                <div style={styles.avatarSection}>
-                    <div style={styles.avatarWrapper}>
-                        {group?.avatarUrl ? (
-                            <img src={group.avatarUrl} style={styles.avatarImg} alt="" />
-                        ) : (
-                            <div style={styles.avatarPlaceholder}>{avatarLetter}</div>
+                {/* Hero card */}
+                <div style={s.heroCard}>
+                    <div style={s.avatarWrap}>
+                        {group?.avatarUrl
+                            ? <img src={group.avatarUrl} style={s.avatarImg} alt="" />
+                            : <div style={s.avatarPlaceholder}>
+                                <Users size={28} color="#fff" />
+                            </div>
+                        }
+                        {avatarLoading && (
+                            <div style={s.avatarOverlay}><div style={s.spinner} /></div>
                         )}
-                        {avatarLoading && <div style={styles.avatarOverlay}>⟳</div>}
+                        {isAdmin && (
+                            <>
+                                <button style={s.cameraBtn} onClick={() => fileRef.current.click()} disabled={avatarLoading}>
+                                    <Camera size={13} />
+                                </button>
+                                <input ref={fileRef} type="file" accept="image/*"
+                                    style={{ display: 'none' }} onChange={handleAvatarChange} />
+                            </>
+                        )}
                     </div>
-
-                    {isAdmin && (
-                        <>
-                            <button
-                                style={styles.avatarBtn}
-                                onClick={() => fileRef.current.click()}
-                                disabled={avatarLoading}
-                            >
-                                📷 Изменить фото группы
-                            </button>
-                            <input
-                                ref={fileRef} type="file" accept="image/*"
-                                style={{ display: 'none' }}
-                                onChange={handleAvatarChange}
-                            />
-                        </>
-                    )}
-
-                    <h2 style={styles.groupName}>{group?.name}</h2>
-                    <p style={styles.memberCount}>{group?.memberCount} участников</p>
-                    {isAdmin && (
-                        <div style={styles.adminBadge}>👑 Вы администратор</div>
-                    )}
+                    <div style={s.heroInfo}>
+                        <h2 style={s.heroName}>{group?.name}</h2>
+                        <p style={s.heroMeta}>
+                            {group?.memberCount} members
+                        </p>
+                        {isAdmin && (
+                            <div style={s.adminPill}>
+                                <Crown size={11} />
+                                Administrator
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {/* Инфо о группе */}
-                <div style={styles.card}>
-                    <div style={styles.cardHeader}>
-                        <span style={styles.cardTitle}>📋 Информация</span>
+                {/* Info card */}
+                <div style={s.card}>
+                    <div style={s.cardHeader}>
+                        <div style={s.cardTitleRow}>
+                            <div style={s.cardIconWrap}>
+                                <Edit3 size={13} color="var(--accent)" />
+                            </div>
+                            <span style={s.cardTitle}>Group info</span>
+                        </div>
                         {isAdmin && !editMode && (
-                            <button style={styles.editBtn} onClick={() => setEditMode(true)}>
-                                ✏️ Изменить
+                            <button style={s.editBtn} onClick={() => setEditMode(true)}>
+                                <Edit3 size={13} /> Edit
                             </button>
                         )}
                         {editMode && (
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <button style={styles.cancelBtn} onClick={() => setEditMode(false)}>
-                                    Отмена
+                            <div style={s.editActions}>
+                                <button style={s.cancelBtn} onClick={() => setEditMode(false)}>
+                                    <X size={13} />
                                 </button>
-                                <button style={styles.saveBtn} onClick={handleSave} disabled={saving}>
-                                    {saving ? '...' : '✓ Сохранить'}
+                                <button style={s.saveBtn} onClick={handleSave} disabled={saving}>
+                                    {saving ? <div style={{ ...s.spinner, width: 13, height: 13 }} /> : <Check size={13} />}
+                                    {saving ? 'Saving' : 'Save'}
                                 </button>
                             </div>
                         )}
                     </div>
-
-                    <div style={styles.fields}>
-                        <div style={styles.field}>
-                            <label style={styles.fieldLabel}>Название</label>
-                            {editMode ? (
-                                <input
-                                    style={styles.input}
-                                    value={form.name}
-                                    onChange={e => setForm({ ...form, name: e.target.value })}
-                                    maxLength={50}
-                                />
-                            ) : (
-                                <span style={styles.fieldValue}>{group?.name}</span>
-                            )}
+                    <div style={s.fieldList}>
+                        {/* Name */}
+                        <div style={s.fieldRow}>
+                            <span style={s.fieldLabel}>Name</span>
+                            {editMode
+                                ? <input style={s.input} value={form.name}
+                                    onChange={e => setForm({ ...form, name: e.target.value })} maxLength={50} />
+                                : <span style={s.fieldValue}>{group?.name}</span>
+                            }
                         </div>
-
-                        <div style={styles.field}>
-                            <label style={styles.fieldLabel}>Описание</label>
-                            {editMode ? (
-                                <textarea
-                                    style={styles.textarea}
-                                    value={form.description}
+                        {/* Description */}
+                        <div style={{ ...s.fieldRow, borderBottom: 'none' }}>
+                            <span style={s.fieldLabel}>Description</span>
+                            {editMode
+                                ? <textarea style={s.textarea} value={form.description}
                                     onChange={e => setForm({ ...form, description: e.target.value })}
-                                    maxLength={200}
-                                    rows={3}
-                                />
-                            ) : (
-                                <span style={styles.fieldValue}>
-                                    {group?.description || <em style={styles.empty}>Нет описания</em>}
+                                    maxLength={200} rows={3} />
+                                : <span style={s.fieldValue}>
+                                    {group?.description || <span style={s.empty}>No description</span>}
                                 </span>
-                            )}
-                        </div>
-
-                        <div style={styles.field}>
-                            <label style={styles.fieldLabel}>Администратор</label>
-                            <div style={styles.adminRow}>
-                                {group?.admin?.avatarUrl ? (
-                                    <img src={group.admin.avatarUrl} style={styles.miniAvatar} alt="" />
-                                ) : (
-                                    <div style={styles.miniAvatarPlaceholder}>
-                                        {group?.admin?.fullName?.charAt(0)}
-                                    </div>
-                                )}
-                                <span style={styles.fieldValue}>{group?.admin?.fullName}</span>
-                                <span style={styles.crownBadge}>👑</span>
-                            </div>
+                            }
                         </div>
                     </div>
                 </div>
 
-                {/* Участники */}
-                <div style={styles.card}>
-                    <div style={styles.cardHeader}>
-                        <span style={styles.cardTitle}>
-                            👥 Участники ({group?.memberCount})
-                        </span>
+                {/* Members card */}
+                <div style={s.card}>
+                    <div style={s.cardHeader}>
+                        <div style={s.cardTitleRow}>
+                            <div style={s.cardIconWrap}>
+                                <Users size={13} color="var(--accent)" />
+                            </div>
+                            <span style={s.cardTitle}>Members</span>
+                            <span style={s.memberCountBadge}>{group?.memberCount}</span>
+                        </div>
                     </div>
 
-                    {/* Добавить участника (только админ) */}
+                    {/* Add member search (admin only) */}
                     {isAdmin && (
-                        <div style={styles.addMemberSection}>
-                            <input
-                                style={styles.searchInput}
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                placeholder="Найти и добавить участника..."
-                            />
+                        <div style={s.addMemberWrap}>
+                            <div style={s.searchInputWrap}>
+                                <Search size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                                <input
+                                    style={s.searchInput}
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    placeholder="Add members..."
+                                />
+                                {searchQuery && (
+                                    <button style={s.clearBtn} onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
+                                        <X size={13} />
+                                    </button>
+                                )}
+                            </div>
                             {searchResults.length > 0 && (
-                                <div style={styles.searchDropdown}>
+                                <div style={s.searchDropdown}>
                                     {searchResults.map(user => (
-                                        <div
-                                            key={user.id}
-                                            style={styles.searchRow}
-                                            onClick={() => handleAddMember(user)}
-                                        >
-                                            {user.avatarUrl ? (
-                                                <img src={user.avatarUrl} style={styles.miniAvatar} alt="" />
-                                            ) : (
-                                                <div style={styles.miniAvatarPlaceholder}>
-                                                    {user.fullName?.charAt(0)}
-                                                </div>
-                                            )}
-                                            <div>
-                                                <div style={styles.searchName}>{user.fullName}</div>
-                                                <div style={styles.searchHandle}>@{user.username}</div>
+                                        <div key={user.id} style={s.searchRow} onClick={() => handleAddMember(user)}>
+                                            {user.avatarUrl
+                                                ? <img src={user.avatarUrl} style={s.miniAvatar} alt="" />
+                                                : <div style={s.miniAvatarPh}>{user.fullName?.charAt(0)}</div>
+                                            }
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={s.searchName}>{user.fullName}</div>
+                                                <div style={s.searchHandle}>@{user.username}</div>
                                             </div>
-                                            <span style={styles.addIcon}>+</span>
+                                            <div style={s.addIcon}><UserPlus size={14} color="var(--accent)" /></div>
                                         </div>
                                     ))}
                                 </div>
@@ -327,49 +278,50 @@ export default function GroupSettingsPage() {
                         </div>
                     )}
 
-                    {/* Список участников */}
-                    <div style={styles.memberList}>
-                        {group?.members?.map(member => {
+                    {/* Member list */}
+                    <div style={s.memberList}>
+                        {group?.members?.map((member, idx) => {
                             const isMe = member.id === me?.id
                             const isMemberAdmin = member.id === group?.admin?.id
+                            const isLast = idx === group.members.length - 1
 
                             return (
-                                <div key={member.id} style={styles.memberRow}>
-                                    {/* Аватар */}
-                                    {member.avatarUrl ? (
-                                        <img src={member.avatarUrl} style={styles.memberAvatar} alt="" />
-                                    ) : (
-                                        <div style={styles.memberAvatarPlaceholder}>
-                                            {member.fullName?.charAt(0)}
-                                        </div>
-                                    )}
-
-                                    {/* Инфо */}
-                                    <div style={styles.memberInfo}>
-                                        <div style={styles.memberName}>
-                                            {member.fullName}
-                                            {isMe && <span style={styles.youBadge}>Вы</span>}
-                                            {isMemberAdmin && <span style={styles.adminIcon}>👑</span>}
-                                        </div>
-                                        <div style={styles.memberHandle}>@{member.username}</div>
+                                <div key={member.id} style={{
+                                    ...s.memberRow,
+                                    borderBottom: isLast ? 'none' : '1px solid var(--border)',
+                                }}>
+                                    <div style={s.memberAvatarWrap}>
+                                        {member.avatarUrl
+                                            ? <img src={member.avatarUrl} style={s.memberAvatar} alt="" />
+                                            : <div style={s.memberAvatarPh}>{member.fullName?.charAt(0)}</div>
+                                        }
+                                        {isMemberAdmin && (
+                                            <div style={s.crownBadge}><Crown size={8} color="#fff" /></div>
+                                        )}
                                     </div>
-
-                                    {/* Действия (только для админа, не для себя и не для другого админа) */}
+                                    <div style={s.memberInfo}>
+                                        <div style={s.memberNameRow}>
+                                            <span style={s.memberName}>{member.fullName}</span>
+                                            {isMe && <span style={s.youTag}>You</span>}
+                                        </div>
+                                        <span style={s.memberHandle}>@{member.username}</span>
+                                    </div>
+                                    {/* Admin actions */}
                                     {isAdmin && !isMe && !isMemberAdmin && (
-                                        <div style={styles.memberActions}>
+                                        <div style={s.memberActions}>
                                             <button
-                                                style={styles.transferBtn}
+                                                style={s.memberActionBtn('accent')}
                                                 onClick={() => setTransferTo(member)}
-                                                title="Передать права"
+                                                title="Transfer admin"
                                             >
-                                                👑
+                                                <Crown size={13} />
                                             </button>
                                             <button
-                                                style={styles.kickBtn}
+                                                style={s.memberActionBtn('error')}
                                                 onClick={() => handleRemoveMember(member.id, member.fullName)}
-                                                title="Удалить из группы"
+                                                title="Remove"
                                             >
-                                                ✕
+                                                <UserMinus size={13} />
                                             </button>
                                         </div>
                                     )}
@@ -379,355 +331,411 @@ export default function GroupSettingsPage() {
                     </div>
                 </div>
 
-                {/* Опасная зона */}
-                <div style={styles.dangerCard}>
-                    <div style={styles.cardTitle}>⚠️ Опасная зона</div>
-                    <div style={styles.dangerActions}>
+                {/* Danger zone */}
+                <div style={s.dangerCard}>
+                    <div style={s.dangerHeader}>
+                        <div style={s.cardTitleRow}>
+                            <div style={{ ...s.cardIconWrap, background: 'var(--error-bg)', borderColor: 'rgba(239,68,68,0.2)' }}>
+                                <ShieldAlert size={13} color="var(--error)" />
+                            </div>
+                            <span style={{ ...s.cardTitle, color: 'var(--error)' }}>Danger zone</span>
+                        </div>
+                    </div>
+                    <div style={s.dangerActions}>
                         {!isAdmin && (
-                            <button
-                                style={styles.leaveBtn}
-                                onClick={() => setConfirmLeave(true)}
-                            >
-                                🚪 Покинуть группу
+                            <button style={s.dangerBtn} onClick={() => setConfirmLeave(true)}>
+                                <LogOut size={15} />
+                                Leave group
+                                <ChevronRight size={14} style={{ marginLeft: 'auto' }} />
                             </button>
                         )}
                         {isAdmin && (
-                            <button
-                                style={styles.deleteBtn}
-                                onClick={() => setConfirmDelete(true)}
-                            >
-                                🗑 Удалить группу
+                            <button style={s.dangerBtn} onClick={() => setConfirmDelete(true)}>
+                                <Trash2 size={15} />
+                                Delete group permanently
+                                <ChevronRight size={14} style={{ marginLeft: 'auto' }} />
                             </button>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Модалка: передать права */}
+            {/* ── Modals ── */}
             {transferTo && (
-                <div style={styles.overlay}>
-                    <div style={styles.confirmModal}>
-                        <div style={styles.confirmTitle}>Передать права администратора?</div>
-                        <p style={styles.confirmText}>
-                            <strong>{transferTo.fullName}</strong> станет новым администратором.
-                            Вы потеряете права управления группой.
-                        </p>
-                        <div style={styles.confirmActions}>
-                            <button style={styles.cancelBtn} onClick={() => setTransferTo(null)}>
-                                Отмена
-                            </button>
-                            <button style={styles.confirmBtn} onClick={handleTransferAdmin}>
-                                Передать
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <Modal
+                    title="Transfer admin rights?"
+                    body={<><strong style={{ color: 'var(--text-primary)' }}>{transferTo.fullName}</strong> will become the new administrator. You will lose management access.</>}
+                    confirmLabel="Transfer"
+                    onConfirm={handleTransferAdmin}
+                    onCancel={() => setTransferTo(null)}
+                />
             )}
-
-            {/* Модалка: выйти */}
             {confirmLeave && (
-                <div style={styles.overlay}>
-                    <div style={styles.confirmModal}>
-                        <div style={styles.confirmTitle}>Покинуть группу?</div>
-                        <p style={styles.confirmText}>
-                            Вы покинете группу <strong>{group?.name}</strong>.
-                            Вас можно будет снова добавить.
-                        </p>
-                        <div style={styles.confirmActions}>
-                            <button style={styles.cancelBtn} onClick={() => setConfirmLeave(false)}>
-                                Отмена
-                            </button>
-                            <button style={styles.dangerConfirmBtn} onClick={handleLeave}>
-                                Покинуть
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <Modal
+                    title="Leave group?"
+                    body="You can be added back later by an admin."
+                    confirmLabel="Leave"
+                    danger
+                    onConfirm={handleLeave}
+                    onCancel={() => setConfirmLeave(false)}
+                />
             )}
-
-            {/* Модалка: удалить группу */}
             {confirmDelete && (
-                <div style={styles.overlay}>
-                    <div style={styles.confirmModal}>
-                        <div style={styles.confirmTitle}>Удалить группу?</div>
-                        <p style={styles.confirmText}>
-                            Группа <strong>{group?.name}</strong> и все её сообщения
-                            будут удалены навсегда. Это действие нельзя отменить.
-                        </p>
-                        <div style={styles.confirmActions}>
-                            <button style={styles.cancelBtn} onClick={() => setConfirmDelete(false)}>
-                                Отмена
-                            </button>
-                            <button style={styles.dangerConfirmBtn} onClick={handleDelete}>
-                                Удалить навсегда
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <Modal
+                    title="Delete group?"
+                    body="All messages will be permanently deleted. This cannot be undone."
+                    confirmLabel="Delete forever"
+                    danger
+                    onConfirm={handleDelete}
+                    onCancel={() => setConfirmDelete(false)}
+                />
             )}
         </div>
     )
 }
 
-const styles = {
+/* ── Modal component ── */
+function Modal({ title, body, confirmLabel, danger, onConfirm, onCancel }) {
+    return (
+        <div style={m.overlay}>
+            <div style={m.modal}>
+                <h3 style={m.title}>{title}</h3>
+                <p style={m.body}>{body}</p>
+                <div style={m.actions}>
+                    <button style={m.cancelBtn} onClick={onCancel}>Cancel</button>
+                    <button style={danger ? m.dangerBtn : m.confirmBtn} onClick={onConfirm}>
+                        {confirmLabel}
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+/* ─────────────── Styles ─────────────── */
+const s = {
     page: {
         minHeight: '100vh',
-        background: '#0f0f1a',
-        fontFamily: "'Segoe UI', sans-serif",
-        color: '#fff',
+        background: 'var(--bg-primary)',
+        fontFamily: "'Inter', sans-serif",
+        color: 'var(--text-primary)',
     },
     loadingPage: {
-        minHeight: '100vh', background: '#0f0f1a',
+        minHeight: '100vh', background: 'var(--bg-primary)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
     },
-    spinner: { fontSize: '40px', color: '#7c6af7' },
+    spinner: {
+        width: '20px', height: '20px',
+        border: '2px solid var(--border)',
+        borderTop: '2px solid var(--accent)',
+        borderRadius: '50%',
+        animation: 'spin 0.7s linear infinite',
+        display: 'inline-block',
+    },
     header: {
-        background: '#1a1a2e',
-        borderBottom: '1px solid #2d2d4e',
-        padding: '16px 24px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: 'var(--bg-secondary)',
+        borderBottom: '1px solid var(--border)',
+        padding: '0 24px',
+        height: '56px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 10,
+        backdropFilter: 'blur(12px)',
     },
-    headerTitle: { fontSize: '18px', fontWeight: '700' },
     backBtn: {
+        display: 'flex', alignItems: 'center', gap: '6px',
         background: 'transparent', border: 'none',
-        color: '#7c6af7', fontSize: '15px',
-        cursor: 'pointer', fontWeight: '600',
+        color: 'var(--accent)', fontSize: '13px', fontWeight: '600',
+        cursor: 'pointer', fontFamily: 'inherit',
+        padding: '6px 10px', borderRadius: '8px',
     },
-    container: {
-        maxWidth: '600px', margin: '0 auto',
-        padding: '24px 16px',
-        display: 'flex', flexDirection: 'column', gap: '20px',
+    headerTitle: {
+        fontSize: '15px', fontWeight: '700',
+        color: 'var(--text-primary)', letterSpacing: '-0.02em',
     },
-
-    // Avatar
-    avatarSection: {
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', gap: '12px',
+    body: {
+        maxWidth: '560px',
+        margin: '0 auto',
+        padding: '28px 16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
     },
-    avatarWrapper: { position: 'relative', width: '110px', height: '110px' },
+    toast: (type) => ({
+        display: 'flex', alignItems: 'center', gap: '10px',
+        background: type === 'error' ? 'var(--error-bg)' : 'var(--success-bg)',
+        border: `1px solid ${type === 'error' ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)'}`,
+        borderRadius: '10px', padding: '11px 14px',
+        fontSize: '13px', fontWeight: '500',
+        color: type === 'error' ? 'var(--error)' : 'var(--success)',
+    }),
+    toastDot: (type) => ({
+        width: '6px', height: '6px', borderRadius: '50%',
+        background: type === 'error' ? 'var(--error)' : 'var(--success)', flexShrink: 0,
+    }),
+    heroCard: {
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
+        borderRadius: '16px',
+        padding: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '20px',
+    },
+    avatarWrap: { position: 'relative', flexShrink: 0 },
     avatarImg: {
-        width: '110px', height: '110px',
-        borderRadius: '50%', objectFit: 'cover',
-        border: '3px solid #7c6af7',
+        width: '72px', height: '72px',
+        borderRadius: '20px', objectFit: 'cover',
+        border: '2px solid var(--border)',
     },
     avatarPlaceholder: {
-        width: '110px', height: '110px', borderRadius: '50%',
-        background: 'linear-gradient(135deg, #7c6af7, #a78bfa)',
+        width: '72px', height: '72px', borderRadius: '20px',
+        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '42px', fontWeight: '800', color: '#fff',
-        border: '3px solid #7c6af7',
     },
     avatarOverlay: {
-        position: 'absolute', inset: 0, borderRadius: '50%',
+        position: 'absolute', inset: 0, borderRadius: '20px',
         background: 'rgba(0,0,0,0.5)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '24px', color: '#fff',
     },
-    avatarBtn: {
-        background: '#2d2d4e', border: '1px solid #3d3d6e',
-        color: '#fff', borderRadius: '8px',
-        padding: '8px 14px', fontSize: '13px', cursor: 'pointer',
+    cameraBtn: {
+        position: 'absolute', bottom: '-6px', right: '-6px',
+        width: '26px', height: '26px', borderRadius: '8px',
+        background: 'var(--accent)', border: '2px solid var(--bg-secondary)',
+        color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'pointer',
     },
-    groupName: {
-        fontSize: '24px', fontWeight: '800',
-        margin: '4px 0 0', color: '#fff', textAlign: 'center',
+    heroInfo: { flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' },
+    heroName: {
+        fontSize: '18px', fontWeight: '700',
+        color: 'var(--text-primary)', letterSpacing: '-0.03em',
     },
-    memberCount: { color: '#888', fontSize: '14px', margin: 0 },
-    adminBadge: {
-        background: '#2d2a1a', border: '1px solid #f59e0b',
-        color: '#f59e0b', borderRadius: '20px',
-        padding: '4px 14px', fontSize: '13px', fontWeight: '600',
+    heroMeta: {
+        fontSize: '13px', color: 'var(--text-muted)', fontWeight: '400',
     },
-
-    // Card
+    adminPill: {
+        display: 'inline-flex', alignItems: 'center', gap: '5px',
+        background: 'rgba(245,158,11,0.1)',
+        border: '1px solid rgba(245,158,11,0.25)',
+        color: '#f59e0b',
+        borderRadius: '999px', padding: '3px 10px',
+        fontSize: '11px', fontWeight: '600',
+        width: 'fit-content', marginTop: '4px',
+    },
     card: {
-        background: '#1a1a2e', border: '1px solid #2d2d4e',
-        borderRadius: '16px', padding: '20px',
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
+        borderRadius: '16px', overflow: 'hidden',
     },
     cardHeader: {
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', marginBottom: '16px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px 20px', borderBottom: '1px solid var(--border)',
     },
-    cardTitle: { fontSize: '16px', fontWeight: '700', color: '#fff' },
+    cardTitleRow: { display: 'flex', alignItems: 'center', gap: '10px' },
+    cardIconWrap: {
+        width: '28px', height: '28px', borderRadius: '8px',
+        background: 'var(--accent-bg)', border: '1px solid var(--accent-bg-hover)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+    },
+    cardTitle: {
+        fontSize: '14px', fontWeight: '600',
+        color: 'var(--text-primary)', letterSpacing: '-0.01em',
+    },
+    memberCountBadge: {
+        background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+        borderRadius: '999px', padding: '1px 8px',
+        fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)',
+    },
     editBtn: {
-        background: '#2d2d4e', border: '1px solid #3d3d6e',
-        color: '#a78bfa', borderRadius: '8px',
-        padding: '6px 14px', fontSize: '13px', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: '6px',
+        background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+        borderRadius: '8px', padding: '6px 12px',
+        fontSize: '12px', fontWeight: '600',
+        color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit',
+    },
+    editActions: { display: 'flex', gap: '6px', alignItems: 'center' },
+    cancelBtn: {
+        background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+        borderRadius: '8px', padding: '6px', color: 'var(--text-secondary)',
+        cursor: 'pointer', display: 'flex', alignItems: 'center',
     },
     saveBtn: {
-        background: '#7c6af7', border: 'none',
-        color: '#fff', borderRadius: '8px',
-        padding: '6px 14px', fontSize: '13px',
-        cursor: 'pointer', fontWeight: '700',
+        display: 'flex', alignItems: 'center', gap: '6px',
+        background: 'var(--accent)', border: 'none', borderRadius: '8px',
+        padding: '6px 14px', fontSize: '12px', fontWeight: '600',
+        color: '#fff', cursor: 'pointer', fontFamily: 'inherit',
     },
-    cancelBtn: {
-        background: 'transparent', border: '1px solid #3d3d6e',
-        color: '#888', borderRadius: '8px',
-        padding: '6px 14px', fontSize: '13px', cursor: 'pointer',
-    },
-
-    // Fields
-    fields: { display: 'flex', flexDirection: 'column', gap: '16px' },
-    field: {
+    fieldList: { padding: '4px 0' },
+    fieldRow: {
         display: 'flex', flexDirection: 'column', gap: '6px',
-        borderBottom: '1px solid #2d2d4e', paddingBottom: '16px',
+        padding: '14px 20px', borderBottom: '1px solid var(--border)',
     },
     fieldLabel: {
-        fontSize: '12px', color: '#888',
-        fontWeight: '600', textTransform: 'uppercase',
+        fontSize: '11px', fontWeight: '600',
+        color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em',
     },
-    fieldValue: { fontSize: '15px', color: '#e2e8f0' },
-    empty: { color: '#555', fontStyle: 'italic' },
+    fieldValue: { fontSize: '14px', color: 'var(--text-primary)' },
+    empty: { color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '13px' },
     input: {
-        background: '#0f0f1a', border: '1px solid #3d3d6e',
-        borderRadius: '8px', padding: '10px 14px',
-        color: '#fff', fontSize: '15px', outline: 'none',
+        background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
+        borderRadius: '8px', padding: '9px 12px',
+        color: 'var(--text-primary)', fontSize: '14px', outline: 'none',
+        fontFamily: 'inherit', width: '100%',
     },
     textarea: {
-        background: '#0f0f1a', border: '1px solid #3d3d6e',
-        borderRadius: '8px', padding: '10px 14px',
-        color: '#fff', fontSize: '15px', outline: 'none',
-        resize: 'vertical', fontFamily: "'Segoe UI', sans-serif",
+        background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
+        borderRadius: '8px', padding: '9px 12px',
+        color: 'var(--text-primary)', fontSize: '14px', outline: 'none',
+        fontFamily: 'inherit', width: '100%', resize: 'vertical', lineHeight: '1.5',
     },
-    adminRow: { display: 'flex', alignItems: 'center', gap: '10px' },
-    miniAvatar: { width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' },
-    miniAvatarPlaceholder: {
-        width: '32px', height: '32px', borderRadius: '50%',
-        background: 'linear-gradient(135deg, #7c6af7, #a78bfa)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '13px', fontWeight: '800', color: '#fff',
+    addMemberWrap: {
+        padding: '12px 16px',
+        borderBottom: '1px solid var(--border)',
+        position: 'relative',
     },
-    crownBadge: { marginLeft: 'auto', fontSize: '18px' },
-
-    // Members
-    addMemberSection: {
-        marginBottom: '16px', position: 'relative',
+    searchInputWrap: {
+        display: 'flex', alignItems: 'center', gap: '8px',
+        background: 'var(--bg-tertiary)', border: '1px solid var(--border)',
+        borderRadius: '10px', padding: '9px 12px',
     },
     searchInput: {
-        width: '100%', boxSizing: 'border-box',
-        background: '#0f0f1a', border: '1px solid #3d3d6e',
-        borderRadius: '10px', padding: '10px 14px',
-        color: '#fff', fontSize: '14px', outline: 'none',
+        flex: 1, background: 'transparent', border: 'none',
+        color: 'var(--text-primary)', fontSize: '13px',
+        outline: 'none', fontFamily: 'inherit',
+    },
+    clearBtn: {
+        background: 'transparent', border: 'none',
+        color: 'var(--text-muted)', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', padding: 0,
     },
     searchDropdown: {
-        position: 'absolute', top: '48px', left: 0, right: 0,
-        background: '#1e1e3a', border: '1px solid #3d3d6e',
-        borderRadius: '10px', zIndex: 50,
-        maxHeight: '200px', overflowY: 'auto',
+        position: 'absolute', top: 'calc(100% - 4px)',
+        left: '16px', right: '16px',
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border)',
+        borderRadius: '12px', zIndex: 50,
+        boxShadow: 'var(--shadow-md)',
+        overflow: 'hidden',
+        maxHeight: '220px', overflowY: 'auto',
     },
     searchRow: {
         display: 'flex', alignItems: 'center', gap: '10px',
-        padding: '10px 14px', cursor: 'pointer',
-        borderBottom: '1px solid #2d2d4e',
+        padding: '11px 14px', cursor: 'pointer',
+        borderBottom: '1px solid var(--border)',
+        transition: 'background 0.12s',
     },
-    searchName: { fontSize: '14px', fontWeight: '600', color: '#fff' },
-    searchHandle: { fontSize: '12px', color: '#666' },
-    addIcon: {
-        marginLeft: 'auto', color: '#7c6af7',
-        fontSize: '20px', fontWeight: '700',
+    miniAvatar: { width: '32px', height: '32px', borderRadius: '10px', objectFit: 'cover' },
+    miniAvatarPh: {
+        width: '32px', height: '32px', borderRadius: '10px',
+        background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '13px', fontWeight: '700', color: '#fff',
     },
-    memberList: { display: 'flex', flexDirection: 'column', gap: '4px' },
+    searchName: { fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' },
+    searchHandle: { fontSize: '11px', color: 'var(--text-muted)' },
+    addIcon: { marginLeft: 'auto' },
+    memberList: { padding: '4px 0' },
     memberRow: {
         display: 'flex', alignItems: 'center', gap: '12px',
-        padding: '10px 8px', borderRadius: '10px',
+        padding: '12px 20px',
     },
-    memberAvatar: { width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' },
-    memberAvatarPlaceholder: {
-        width: '42px', height: '42px', borderRadius: '50%',
-        background: 'linear-gradient(135deg, #7c6af7, #a78bfa)',
+    memberAvatarWrap: { position: 'relative', flexShrink: 0 },
+    memberAvatar: { width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' },
+    memberAvatarPh: {
+        width: '40px', height: '40px', borderRadius: '12px',
+        background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '16px', fontWeight: '800', color: '#fff',
+        fontSize: '14px', fontWeight: '700', color: '#fff',
     },
-    memberInfo: { flex: 1 },
+    crownBadge: {
+        position: 'absolute', bottom: '-4px', right: '-4px',
+        width: '16px', height: '16px', borderRadius: '5px',
+        background: '#f59e0b', border: '2px solid var(--bg-secondary)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+    },
+    memberInfo: { flex: 1, minWidth: 0 },
+    memberNameRow: { display: 'flex', alignItems: 'center', gap: '6px' },
     memberName: {
-        fontSize: '15px', fontWeight: '600', color: '#fff',
-        display: 'flex', alignItems: 'center', gap: '6px',
+        fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)',
+        letterSpacing: '-0.01em',
     },
-    memberHandle: { fontSize: '13px', color: '#666' },
-    youBadge: {
-        background: '#2d2d4e', color: '#a78bfa',
-        fontSize: '11px', padding: '2px 8px',
-        borderRadius: '10px', fontWeight: '600',
+    youTag: {
+        background: 'var(--accent-bg)', border: '1px solid var(--accent-bg-hover)',
+        color: 'var(--accent-light)', borderRadius: '999px',
+        padding: '1px 7px', fontSize: '10px', fontWeight: '700',
     },
-    adminIcon: { fontSize: '16px' },
+    memberHandle: { fontSize: '12px', color: 'var(--text-muted)' },
     memberActions: { display: 'flex', gap: '6px' },
-    transferBtn: {
-        background: '#2d2a1a', border: '1px solid #f59e0b',
-        color: '#f59e0b', borderRadius: '8px',
-        width: '32px', height: '32px',
-        cursor: 'pointer', fontSize: '14px',
-    },
-    kickBtn: {
-        background: '#2d1a1a', border: '1px solid #f87171',
-        color: '#f87171', borderRadius: '8px',
-        width: '32px', height: '32px',
-        cursor: 'pointer', fontSize: '13px',
-    },
-
-    // Danger zone
+    memberActionBtn: (type) => ({
+        background: type === 'error' ? 'var(--error-bg)' : 'var(--accent-bg)',
+        border: `1px solid ${type === 'error' ? 'rgba(239,68,68,0.2)' : 'var(--accent-bg-hover)'}`,
+        borderRadius: '8px', padding: '7px',
+        color: type === 'error' ? 'var(--error)' : 'var(--accent)',
+        cursor: 'pointer', display: 'flex', alignItems: 'center',
+        transition: 'opacity 0.15s',
+    }),
     dangerCard: {
-        background: '#1a1a2e', border: '1px solid #f87171',
-        borderRadius: '16px', padding: '20px',
-        display: 'flex', flexDirection: 'column', gap: '16px',
+        background: 'var(--bg-secondary)',
+        border: '1px solid rgba(239,68,68,0.2)',
+        borderRadius: '16px', overflow: 'hidden',
     },
-    dangerActions: { display: 'flex', gap: '12px', flexWrap: 'wrap' },
-    leaveBtn: {
-        background: '#2d1a1a', border: '1px solid #f87171',
-        color: '#f87171', borderRadius: '10px',
-        padding: '12px 20px', fontSize: '14px',
-        cursor: 'pointer', fontWeight: '600',
+    dangerHeader: {
+        padding: '14px 20px', borderBottom: '1px solid rgba(239,68,68,0.15)',
     },
-    deleteBtn: {
-        background: '#2d1a1a', border: '1px solid #f87171',
-        color: '#f87171', borderRadius: '10px',
-        padding: '12px 20px', fontSize: '14px',
-        cursor: 'pointer', fontWeight: '600',
+    dangerActions: { padding: '8px' },
+    dangerBtn: {
+        width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+        background: 'var(--error-bg)', border: '1px solid rgba(239,68,68,0.15)',
+        borderRadius: '10px', padding: '13px 16px',
+        color: 'var(--error)', fontSize: '14px', fontWeight: '600',
+        cursor: 'pointer', fontFamily: 'inherit',
+        transition: 'opacity 0.15s',
     },
+}
 
-    // Notifications
-    error: {
-        background: '#2d1a1a', border: '1px solid #f87171',
-        color: '#f87171', borderRadius: '8px',
-        padding: '10px 14px', fontSize: '13px',
-    },
-    successMsg: {
-        background: '#1a2e1a', border: '1px solid #4ade80',
-        color: '#4ade80', borderRadius: '8px',
-        padding: '10px 14px', fontSize: '13px',
-    },
-
-    // Confirm modals
+const m = {
     overlay: {
         position: 'fixed', inset: 0,
-        background: 'rgba(0,0,0,0.75)',
+        background: 'rgba(0,0,0,0.7)',
+        backdropFilter: 'blur(8px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 1000,
+        zIndex: 1000, animation: 'fadeIn 0.15s ease',
     },
-    confirmModal: {
-        background: '#1a1a2e', border: '1px solid #2d2d4e',
-        borderRadius: '16px', padding: '28px 32px',
-        width: '100%', maxWidth: '400px',
+    modal: {
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
+        borderRadius: '16px', padding: '28px 28px 24px',
+        width: '100%', maxWidth: '380px',
+        boxShadow: 'var(--shadow-lg)',
+        animation: 'fadeUp 0.15s ease',
     },
-    confirmTitle: {
-        fontSize: '18px', fontWeight: '700',
-        color: '#fff', marginBottom: '12px',
+    title: {
+        fontSize: '17px', fontWeight: '700',
+        color: 'var(--text-primary)', letterSpacing: '-0.02em',
+        marginBottom: '10px',
     },
-    confirmText: {
-        color: '#888', fontSize: '14px',
+    body: {
+        fontSize: '14px', color: 'var(--text-secondary)',
         lineHeight: '1.6', marginBottom: '24px',
     },
-    confirmActions: { display: 'flex', gap: '10px', justifyContent: 'flex-end' },
-    confirmBtn: {
-        background: '#7c6af7', border: 'none',
-        color: '#fff', borderRadius: '8px',
-        padding: '10px 20px', fontSize: '14px',
-        cursor: 'pointer', fontWeight: '700',
+    actions: { display: 'flex', gap: '8px', justifyContent: 'flex-end' },
+    cancelBtn: {
+        background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+        borderRadius: '8px', padding: '9px 18px',
+        fontSize: '13px', fontWeight: '600',
+        color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit',
     },
-    dangerConfirmBtn: {
-        background: '#f87171', border: 'none',
-        color: '#fff', borderRadius: '8px',
-        padding: '10px 20px', fontSize: '14px',
-        cursor: 'pointer', fontWeight: '700',
+    confirmBtn: {
+        background: 'var(--accent)', border: 'none',
+        borderRadius: '8px', padding: '9px 18px',
+        fontSize: '13px', fontWeight: '600',
+        color: '#fff', cursor: 'pointer', fontFamily: 'inherit',
+    },
+    dangerBtn: {
+        background: 'var(--error)', border: 'none',
+        borderRadius: '8px', padding: '9px 18px',
+        fontSize: '13px', fontWeight: '600',
+        color: '#fff', cursor: 'pointer', fontFamily: 'inherit',
     },
 }

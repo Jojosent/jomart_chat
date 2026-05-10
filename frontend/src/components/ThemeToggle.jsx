@@ -1,52 +1,37 @@
 import useThemeStore from '../store/themeStore'
+import { Moon, Sun } from 'lucide-react'
 
-export default function ThemeToggle() {
+export function ThemeToggle() {
     const { theme, toggleTheme } = useThemeStore()
     const isDark = theme === 'dark'
 
     return (
         <button
             style={{
-                ...styles.toggle,
-                background: isDark ? '#2a2a45' : '#e8e8f8',
+                ...tt.btn,
+                background: isDark ? 'var(--bg-elevated)' : 'var(--bg-tertiary)',
+                borderColor: 'var(--border)',
             }}
             onClick={toggleTheme}
-            title={isDark ? 'Switch to light' : 'Switch to dark'}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
-            <div style={{
-                ...styles.thumb,
-                transform: isDark ? 'translateX(0px)' : 'translateX(20px)',
-                background: isDark ? '#7c6af7' : '#6c5ce7',
-            }}>
-                <span style={styles.icon}>{isDark ? '🌙' : '☀️'}</span>
-            </div>
+            {isDark
+                ? <Moon size={15} color="var(--accent-light)" />
+                : <Sun size={15} color="var(--warning)" />
+            }
         </button>
     )
 }
 
-const styles = {
-    toggle: {
-        width: '48px',
-        height: '26px',
-        borderRadius: '13px',
-        border: 'none',
-        cursor: 'pointer',
-        padding: '3px',
-        position: 'relative',
-        transition: 'background 0.3s ease',
+const tt = {
+    btn: {
+        width: '32px', height: '32px',
+        border: '1px solid',
+        borderRadius: '8px', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        transition: 'background 0.2s, border-color 0.2s',
         flexShrink: 0,
     },
-    thumb: {
-        width: '20px',
-        height: '20px',
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'transform 0.3s ease, background 0.3s ease',
-        fontSize: '11px',
-    },
-    icon: {
-        lineHeight: 1,
-    },
 }
+
+
