@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { getNotifications, markAsRead, markAllAsRead } from '../api/notifications'
+import { acceptInvite, declineInvite } from '../api/group'
 import { useNavigate } from 'react-router-dom'
-import { Bell, MessageSquare, Users, DoorOpen, Crown, CheckCheck, X } from 'lucide-react'
+import { Bell, MessageSquare, Users, DoorOpen, Crown, CheckCheck, X, Check, X as XIcon } from 'lucide-react'
 
 export function NotificationPanel({ onClose, onCountChange }) {
     const navigate = useNavigate()
@@ -19,14 +20,44 @@ export function NotificationPanel({ onClose, onCountChange }) {
     }
 
     const handleRead = async (n) => {
-        if (!n.read) {
+        if (!n.read && n.type !== 'GROUP_INVITE') {
             await markAsRead(n.id)
             setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))
             if (onCountChange) onCountChange()
         }
+
+        if (n.type === 'GROUP_INVITE' && n.status === 'PENDING') {
+            // Не закрываем панель, даем пользователю нажать принять/отклонить
+            return
+        }
+
         if (n.referenceType === 'CHAT') navigate('/chat')
         else if (n.referenceType === 'GROUP') navigate(`/groups/${n.referenceId}/settings`)
         onClose()
+    }
+
+    const handleAccept = async (e, n) => {
+        e.stopPropagation()
+        try {
+            await acceptInvite(n.referenceId)
+            setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, status: 'ACCEPTED', read: true } : x))
+            if (onCountChange) onCountChange()
+            navigate('/chat')
+            onClose()
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    const handleDecline = async (e, n) => {
+        e.stopPropagation()
+        try {
+            await declineInvite(n.referenceId)
+            setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, status: 'DECLINED', read: true } : x))
+            if (onCountChange) onCountChange()
+        } catch (err) {
+            console.error(err)
+        }
     }
 
     const handleReadAll = async () => {
@@ -140,6 +171,26 @@ export function NotificationPanel({ onClose, onCountChange }) {
                                             {!n.read && <div style={{ ...np.unreadDot, background: color }} />}
                                         </div>
                                         <p style={np.itemBody}>{n.body}</p>
+
+                                        {n.type === 'GROUP_INVITE' && n.status === 'PENDING' && (
+                                            <div style={np.actions}>
+                                                <button style={np.acceptBtn} onClick={(e) => handleAccept(e, n)}>
+                                                    <Check size={12} /> Accept
+                                                </button>
+                                                <button style={np.declineBtn} onClick={(e) => handleDecline(e, n)}>
+                                                    <XIcon size={12} /> Decline
+                                                </button>
+                                            </div>
+                                        )}
+                                        {n.type === 'GROUP_INVITE' && n.status !== 'PENDING' && (
+                                            <span style={{
+                                                ...np.statusLabel,
+                                                color: n.status === 'ACCEPTED' ? '#10b981' : '#ef4444'
+                                            }}>
+                                                {n.status === 'ACCEPTED' ? 'Accepted' : 'Declined'}
+                                            </span>
+                                        )}
+
                                         <span style={np.itemTime}>{timeAgo(n.createdAt)}</span>
                                     </div>
                                 </div>
@@ -255,4 +306,21 @@ const np = {
         marginBottom: '4px', margin: 0,
     },
     itemTime: { fontSize: '11px', color: 'var(--text-muted)' },
+
+    actions: {
+        display: 'flex', gap: '8px', marginTop: '8px', marginBottom: '4px',
+    },
+    acceptBtn: {
+        background: '#10b981', color: '#fff', border: 'none',
+        borderRadius: '6px', padding: '4px 10px', fontSize: '11px',
+        fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+    },
+    declineBtn: {
+        background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)',
+        borderRadius: '6px', padding: '4px 10px', fontSize: '11px',
+        fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+    },
+    statusLabel: {
+        fontSize: '11px', fontWeight: '600', display: 'block', marginTop: '4px', marginBottom: '4px',
+    },
 }

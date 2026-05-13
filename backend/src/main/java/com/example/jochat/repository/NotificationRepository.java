@@ -8,12 +8,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
     List<Notification> findByRecipientOrderByCreatedAtDesc(User recipient);
 
     List<Notification> findByRecipientAndReadFalseOrderByCreatedAtDesc(User recipient);
+
+    Optional<Notification> findFirstByRecipientAndReferenceIdAndReferenceTypeAndTypeAndStatusOrderByCreatedAtDesc(
+            User recipient, Long referenceId, String referenceType, Notification.NotificationType type, Notification.NotificationStatus status);
 
     int countByRecipientAndReadFalse(User recipient);
 

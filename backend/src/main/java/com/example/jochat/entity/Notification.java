@@ -24,6 +24,10 @@ public class Notification {
     @Column(nullable = false)
     private NotificationType type;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NotificationStatus status = NotificationStatus.PENDING;
+
     @Column(nullable = false)
     private String title;
 
@@ -48,6 +52,10 @@ public class Notification {
         ADMIN_TRANSFERRED,  // стал/потерял права админа
     }
 
+    public enum NotificationStatus {
+        PENDING, ACCEPTED, DECLINED
+    }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -59,6 +67,9 @@ public class Notification {
 
     public NotificationType getType() { return type; }
     public void setType(NotificationType type) { this.type = type; }
+
+    public NotificationStatus getStatus() { return status; }
+    public void setStatus(NotificationStatus status) { this.status = status; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

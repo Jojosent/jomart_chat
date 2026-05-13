@@ -16,3 +16,5 @@ export const removeMember   = (id, userId)     => api.delete(`/groups/${id}/memb
 export const transferAdmin  = (id, userId)     => api.put(`/groups/${id}/admin/${userId}`)
 export const leaveGroup     = (id)             => api.delete(`/groups/${id}/leave`)
 export const deleteGroup    = (id)             => api.delete(`/groups/${id}`)
+export const acceptInvite   = (id)             => api.post(`/groups/${id}/accept-invite`)
+export const declineInvite  = (id)             => api.post(`/groups/${id}/decline-invite`)

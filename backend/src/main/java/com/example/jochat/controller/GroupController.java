@@ -128,4 +128,23 @@ public class GroupController {
         groupService.deleteGroup(id, userDetails.getUsername());
         return ResponseEntity.ok(Map.of("message", "Group deleted"));
     }
+
+    // POST /api/groups/{id}/accept-invite — принять приглашение
+    @PostMapping("/{id}/accept-invite")
+    public ResponseEntity<GroupDto> acceptInvite(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(
+                groupService.acceptInvite(id, userDetails.getUsername())
+        );
+    }
+
+    // POST /api/groups/{id}/decline-invite — отклонить приглашение
+    @PostMapping("/{id}/decline-invite")
+    public ResponseEntity<?> declineInvite(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+        groupService.declineInvite(id, userDetails.getUsername());
+        return ResponseEntity.ok(Map.of("message", "Invite declined"));
+    }
 }

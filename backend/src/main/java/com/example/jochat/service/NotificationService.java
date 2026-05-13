@@ -79,7 +79,7 @@ public class NotificationService {
             newMember, admin,
             Notification.NotificationType.GROUP_INVITE,
             "Приглашение в группу",
-            admin.getFullName() + " добавил вас в группу «" + groupName + "»",
+            admin.getFullName() + " пригласил вас в группу «" + groupName + "»",
             groupId, "GROUP"
         );
     }
@@ -150,6 +150,7 @@ public class NotificationService {
         NotificationDto dto = new NotificationDto();
         dto.setId(n.getId());
         dto.setType(n.getType().name());
+        dto.setStatus(n.getStatus().name());
         dto.setTitle(n.getTitle());
         dto.setBody(n.getBody());
         dto.setReferenceId(n.getReferenceId());
