@@ -6,6 +6,7 @@ public class NotificationDto {
 
     private Long id;
     private String type;
+    private String status;
     private String title;
     private String body;
     private Long referenceId;
@@ -21,6 +22,9 @@ public class NotificationDto {
 
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

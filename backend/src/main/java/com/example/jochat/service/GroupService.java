@@ -5,9 +5,11 @@ import com.example.jochat.dto.GroupDto;
 import com.example.jochat.dto.UserDto;
 import com.example.jochat.entity.Chat;
 import com.example.jochat.entity.Group;
+import com.example.jochat.entity.Notification;
 import com.example.jochat.entity.User;
 import com.example.jochat.repository.ChatRepository;
 import com.example.jochat.repository.GroupRepository;
+import com.example.jochat.repository.NotificationRepository;
 import com.example.jochat.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +34,8 @@ public class GroupService {
     @Autowired
     private ChatRepository chatRepository;
     @Autowired
+    private NotificationRepository notificationRepository;
+    @Autowired
     private UserService userService;
     @Autowired
     private NotificationService notificationService;
@@ -53,13 +57,8 @@ public class GroupService {
         List<User> chatMembers = new ArrayList<>();
         chatMembers.add(admin);
 
-        // Добавляем участников
-        if (request.getMemberIds() != null) {
-            for (Long memberId : request.getMemberIds()) {
-                userRepository.findById(memberId).ifPresent(chatMembers::add);
-            }
-        }
-        chat.setMembers(chatMembers);
+        // Участники будут добавляться только после принятия приглашения
+        chat.setMembers(new ArrayList<>(chatMembers));
         chatRepository.save(chat);
 
         // Создаём группу
@@ -67,9 +66,27 @@ public class GroupService {
         group.setName(request.getName());
         group.setDescription(request.getDescription());
         group.setAdmin(admin);
-        group.setMembers(chatMembers);
+        group.setMembers(new ArrayList<>(chatMembers));
         group.setChat(chat);
         groupRepository.save(group);
+
+        // Отправляем приглашения остальным
+        if (request.getMemberIds() != null) {
+            for (Long memberId : request.getMemberIds()) {
+                userRepository.findById(memberId).ifPresent(member -> {
+                    if (!member.getId().equals(admin.getId())) {
+                        // Проверяем нет ли уже активного приглашения
+                        boolean alreadyInvited = notificationRepository.findFirstByRecipientAndReferenceIdAndReferenceTypeAndTypeAndStatusOrderByCreatedAtDesc(
+                                member, group.getId(), "GROUP", Notification.NotificationType.GROUP_INVITE, Notification.NotificationStatus.PENDING
+                        ).isPresent();
+
+                        if (!alreadyInvited) {
+                            notificationService.notifyGroupInvite(admin, member, group.getId(), group.getName());
+                        }
+                    }
+                });
+            }
+        }
 
         return toDto(group);
     }
@@ -155,7 +172,7 @@ public class GroupService {
         return toDto(group);
     }
 
-    // ── Добавить участника ───────────────────────────────────────
+    // ── Добавить участника (пригласить) ──────────────────────────
     @Transactional
     public GroupDto addMember(Long groupId, String adminEmail, Long userId) {
         Group group = findGroupAndCheckAdmin(groupId, adminEmail);
@@ -166,10 +183,16 @@ public class GroupService {
             throw new RuntimeException("User is already a member");
         }
 
-        group.getMembers().add(newMember);
-        group.getChat().getMembers().add(newMember);
-        chatRepository.save(group.getChat());
-        groupRepository.save(group);
+        // Проверяем нет ли уже активного приглашения
+        boolean alreadyInvited = notificationRepository.findFirstByRecipientAndReferenceIdAndReferenceTypeAndTypeAndStatusOrderByCreatedAtDesc(
+                newMember, group.getId(), "GROUP", Notification.NotificationType.GROUP_INVITE, Notification.NotificationStatus.PENDING
+        ).isPresent();
+
+        if (alreadyInvited) {
+            throw new RuntimeException("User is already invited");
+        }
+
+        // Вместо добавления сразу, отправляем приглашение
         notificationService.notifyGroupInvite(
                 userRepository.findByEmail(adminEmail).get(),
                 newMember,
@@ -252,6 +275,56 @@ public class GroupService {
         Chat chat = group.getChat();
         groupRepository.delete(group);
         chatRepository.delete(chat);
+    }
+
+    // ── Принять приглашение ──────────────────────────────────────
+    @Transactional
+    public GroupDto acceptInvite(Long groupId, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+
+        // Проверяем наличие приглашения
+        Notification notification = notificationRepository.findFirstByRecipientAndReferenceIdAndReferenceTypeAndTypeAndStatusOrderByCreatedAtDesc(
+                user, groupId, "GROUP", Notification.NotificationType.GROUP_INVITE, Notification.NotificationStatus.PENDING
+        ).orElseThrow(() -> new RuntimeException("No pending invitation found for this group"));
+
+        if (group.getMembers().contains(user)) {
+            // Если уже участник, просто помечаем уведомление как принятое (на всякий случай)
+            notification.setStatus(Notification.NotificationStatus.ACCEPTED);
+            notification.setRead(true);
+            notificationRepository.save(notification);
+            return toDto(group);
+        }
+
+        group.getMembers().add(user);
+        group.getChat().getMembers().add(user);
+        chatRepository.save(group.getChat());
+        groupRepository.save(group);
+
+        // Обновляем статус уведомления
+        notification.setStatus(Notification.NotificationStatus.ACCEPTED);
+        notification.setRead(true);
+        notificationRepository.save(notification);
+
+        return toDto(group);
+    }
+
+    // ── Отклонить приглашение ────────────────────────────────────
+    @Transactional
+    public void declineInvite(Long groupId, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Обновляем статус уведомления
+        Notification notification = notificationRepository.findFirstByRecipientAndReferenceIdAndReferenceTypeAndTypeAndStatusOrderByCreatedAtDesc(
+                user, groupId, "GROUP", Notification.NotificationType.GROUP_INVITE, Notification.NotificationStatus.PENDING
+        ).orElseThrow(() -> new RuntimeException("No pending invitation found for this group"));
+
+        notification.setStatus(Notification.NotificationStatus.DECLINED);
+        notification.setRead(true);
+        notificationRepository.save(notification);
     }
 
     // ── Helpers ──────────────────────────────────────────────────
