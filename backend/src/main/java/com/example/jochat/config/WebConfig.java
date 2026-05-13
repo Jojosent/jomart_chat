@@ -1,5 +1,7 @@
 package com.example.jochat.config;
 
+import java.nio.file.Paths;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.*;
@@ -13,8 +15,9 @@ public class WebConfig implements WebMvcConfigurer {
     // Отдаём загруженные файлы как статику
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        String absolutePath = Paths.get(uploadPath).toAbsolutePath().toString();
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadPath + "/");
+                .addResourceLocations("file:" + absolutePath + "/");
     }
 
     // CORS для всего приложения
@@ -26,4 +29,5 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }
+
 }
