@@ -7,8 +7,11 @@ import com.example.jochat.entity.Message;
 import com.example.jochat.entity.User;
 import com.example.jochat.repository.ChatRepository;
 import com.example.jochat.repository.MessageRepository;
+import com.example.jochat.entity.MediaMessage;
+import com.example.jochat.repository.MediaMessageRepository;
 import com.example.jochat.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +26,8 @@ public class MessageService {
     @Autowired private UserRepository userRepository;
     @Autowired private ChatService chatService;
     @Autowired private ProfanityFilterService profanityFilterService;
+    @Autowired private SimpMessagingTemplate messagingTemplate;
+    @Autowired private MediaMessageRepository mediaMessageRepository;
 
     // ── Отправить сообщение (SENT) ───────────────────────────────
     @Transactional
@@ -95,6 +100,60 @@ public class MessageService {
                 .toList();
     }
 
+    // ── Переслать сообщение ──────────────────────────────────────
+    @Transactional
+    public MessageDto forwardMessage(String email, Long messageId, Long targetChatId) {
+        User me = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Message original = messageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Message not found"));
+        Chat targetChat = chatRepository.findById(targetChatId)
+                .orElseThrow(() -> new RuntimeException("Target chat not found"));
+
+        if (!targetChat.getMembers().contains(me))
+            throw new RuntimeException("Access denied");
+
+        // Создаем новое сообщение
+        Message forwarded = new Message();
+        forwarded.setChat(targetChat);
+        forwarded.setSender(me);
+        forwarded.setContent(original.getContent());
+        forwarded.setStatus(Message.MessageStatus.SENT);
+        messageRepository.save(forwarded);
+
+        targetChat.setLastMessage(forwarded);
+        chatRepository.save(targetChat);
+
+        // Копируем медиа если есть
+        mediaMessageRepository.findByMessage(original).ifPresent(origMedia -> {
+            MediaMessage newMedia = new MediaMessage();
+            newMedia.setMessage(forwarded);
+            newMedia.setFileName(origMedia.getFileName());
+            newMedia.setStoredName(origMedia.getStoredName());
+            newMedia.setMediaType(origMedia.getMediaType());
+            newMedia.setMimeType(origMedia.getMimeType());
+            newMedia.setFileSize(origMedia.getFileSize());
+            newMedia.setIvHex(origMedia.getIvHex());
+            newMedia.setWidth(origMedia.getWidth());
+            newMedia.setHeight(origMedia.getHeight());
+            newMedia.setDuration(origMedia.getDuration());
+            mediaMessageRepository.save(newMedia);
+        });
+
+        MessageDto dto = chatService.toMessageDto(forwarded);
+
+        // Broadcast to target chat
+        targetChat.getMembers().forEach(member -> {
+            messagingTemplate.convertAndSendToUser(
+                member.getEmail(),
+                "/queue/messages",
+                dto
+            );
+        });
+
+        return dto;
+    }
+
     // ── Удалить сообщение ────────────────────────────────────────
     @Transactional
     public MessageDto deleteMessage(String email, Long messageId) {
@@ -110,6 +169,17 @@ public class MessageService {
         msg.setContent("Сообщение удалено");
         messageRepository.save(msg);
 
-        return chatService.toMessageDto(msg);
+        MessageDto dto = chatService.toMessageDto(msg);
+
+        // Рассылаем всем участникам уведомление об удалении
+        msg.getChat().getMembers().forEach(member -> {
+            messagingTemplate.convertAndSendToUser(
+                member.getEmail(),
+                "/queue/delete",
+                dto
+            );
+        });
+
+        return dto;
     }
 }

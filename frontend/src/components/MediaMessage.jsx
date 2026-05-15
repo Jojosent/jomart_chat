@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Download, FileText, Film, Image } from 'lucide-react'
+import MediaViewer from './MediaViewer'
 
 function useAuthBlob(url) {
     const [blobUrl, setBlobUrl] = useState(null)
@@ -36,8 +37,9 @@ function useAuthBlob(url) {
     return { blobUrl, loading, error }
 }
 
-export default function MediaMessage({ media, isMine }) {
+export default function MediaMessage({ media, isMine, onForward }) {
     const { blobUrl, loading, error } = useAuthBlob(media?.viewUrl)
+    const [showViewer, setShowViewer] = useState(false)
 
     const textColor = isMine ? 'rgba(255,255,255,0.9)' : 'var(--text-primary)'
     const mutedColor = isMine ? 'rgba(255,255,255,0.55)' : 'var(--text-muted)'
@@ -103,11 +105,18 @@ export default function MediaMessage({ media, isMine }) {
                             borderRadius: '12px',
                             cursor: 'pointer',
                         }}
-                        onClick={() => {
-                            const a = document.createElement('a')
-                            a.href = blobUrl
-                            a.download = media.fileName || 'photo'
-                            a.click()
+                        onClick={() => setShowViewer(true)}
+                    />
+                )}
+
+                {showViewer && (
+                    <MediaViewer
+                        media={media}
+                        blobUrl={blobUrl}
+                        onClose={() => setShowViewer(false)}
+                        onForward={() => {
+                            setShowViewer(false)
+                            if (onForward) onForward()
                         }}
                     />
                 )}
