@@ -77,4 +77,5 @@ public class ChatController {
                 "hasProfanity", hasProfanity
         ));
     }
+    
 }

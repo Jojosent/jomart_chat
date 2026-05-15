@@ -9,6 +9,7 @@ import com.example.jochat.entity.User;
 import com.example.jochat.repository.ChatRepository;
 import com.example.jochat.repository.MessageRepository;
 import com.example.jochat.repository.UserRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.example.jochat.dto.MediaMessageDto;
+import com.example.jochat.repository.MediaMessageRepository;
 
 @Service
 public class ChatService {
@@ -28,6 +32,8 @@ public class ChatService {
     private UserRepository userRepository;
     @Autowired
     private UserService userService;
+    @Autowired
+    private MediaMessageRepository mediaMessageRepository;
 
     // Получить или создать приватный чат
     @Transactional
@@ -122,6 +128,24 @@ public class ChatService {
         dto.setDeleted(msg.isDeleted());
         dto.setCreatedAt(msg.getCreatedAt());
         dto.setReadAt(msg.getReadAt());
+
+        // Подгружаем медиа если есть
+        mediaMessageRepository.findByMessage(msg).ifPresent(media -> {
+            MediaMessageDto mediaDto = new MediaMessageDto();
+            mediaDto.setId(media.getId());
+            mediaDto.setMessageId(msg.getId());
+            mediaDto.setMediaType(media.getMediaType());
+            mediaDto.setMimeType(media.getMimeType());
+            mediaDto.setFileName(media.getFileName());
+            mediaDto.setFileSize(media.getFileSize());
+            mediaDto.setWidth(media.getWidth());
+            mediaDto.setHeight(media.getHeight());
+            mediaDto.setDuration(media.getDuration());
+            mediaDto.setViewUrl("/api/media/" + media.getStoredName());
+            mediaDto.setCreatedAt(media.getCreatedAt());
+            dto.setMedia(mediaDto);
+        });
+
         return dto;
     }
 }
