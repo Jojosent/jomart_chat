@@ -50,7 +50,9 @@ public class MediaService {
         Chat chat = chatRepository.findById(chatId)
                 .orElseThrow(() -> new RuntimeException("Chat not found"));
 
-        if (!chat.getMembers().contains(sender)) {
+        boolean isMember = chat.getMembers().stream()
+                .anyMatch(m -> m.getId().equals(sender.getId()));
+        if (!isMember) {
             throw new RuntimeException("Access denied");
         }
 
@@ -96,13 +98,17 @@ public class MediaService {
         MessageDto dto = chatService.toMessageDto(message);
 
         // 6. WebSocket — рассылаем всем участникам
-        chat.getMembers().forEach(member
-                -> messagingTemplate.convertAndSendToUser(
+        chat.getMembers().forEach(member -> {
+            try {
+                messagingTemplate.convertAndSendToUser(
                         member.getEmail(),
                         "/queue/messages",
                         dto
-                )
-        );
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to send WS message to " + member.getEmail() + ": " + e.getMessage());
+            }
+        });
 
         return dto;
     }
@@ -118,7 +124,9 @@ public class MediaService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Chat chat = media.getMessage().getChat();
-        if (!chat.getMembers().contains(user)) {
+        boolean isMember = chat.getMembers().stream()
+                .anyMatch(m -> m.getId().equals(user.getId()));
+        if (!isMember) {
             throw new RuntimeException("Access denied");
         }
 
