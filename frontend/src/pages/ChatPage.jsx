@@ -21,7 +21,7 @@ import {
     Search, Bell, Bot, Users, User, Plus,
     Settings, Circle, Trash2,
     MessageSquare, X, ChevronRight,
-    Paperclip, Smile, Send,
+    Paperclip, Smile, Send, Camera,
 } from 'lucide-react'
 
 export default function ChatPage() {
@@ -53,6 +53,7 @@ export default function ChatPage() {
     const inputRef = useRef(null)
     const attachBtnRef = useRef(null)
     const stickerBtnRef = useRef(null)
+    const cameraInputRef = useRef(null)
 
     const {
         unreadCount, addNotification, fetchUnreadCount, resetUnread,
@@ -73,11 +74,6 @@ export default function ChatPage() {
         // onMessage
         (msg) => {
             setMessages(prev => {
-                // Если пришло сообщение с тем же ID, обновляем его (могло прийти через REST и WS)
-                if (prev.find(m => m.id === msg.id)) {
-                    return prev.map(m => m.id === msg.id ? msg : m)
-                }
-                // Если мы отправили сообщение, заменяем temp сообщение на реальное
                 if (msg.senderId === me?.id) {
                     const hasTemp = prev.some(m => m.temp && m.chatId === msg.chatId)
                     if (hasTemp) {
@@ -87,6 +83,7 @@ export default function ChatPage() {
                             i === prev.length - 1 - idx ? msg : m)
                     }
                 }
+                if (prev.find(m => m.id === msg.id)) return prev
                 return [...prev, msg]
             })
             setChats(prev => prev.map(c =>
@@ -120,13 +117,24 @@ export default function ChatPage() {
     )
 
     // ── Effects ──────────────────────────────────────────────────
+    const isInitialLoadRef = useRef(false)
+
     useEffect(() => { fetchChats() }, [])
     useEffect(() => { activeChatRef.current = activeChat }, [activeChat])
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        if (messages.length === 0) return
+        if (isInitialLoadRef.current) {
+            // Первая загрузка чата — мгновенно прыгаем вниз
+            messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
+            isInitialLoadRef.current = false
+        } else {
+            // Новое сообщение — плавно
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
     }, [messages])
     useEffect(() => {
         if (activeChat) {
+            isInitialLoadRef.current = true
             fetchMessages(activeChat.id)
             markRead(activeChat.id)
         }
@@ -204,7 +212,14 @@ export default function ChatPage() {
         sendMessage(activeChat.id, emoji)
     }
 
-    // ── Upload media ─────────────────────────────────────────────
+    // ── Camera capture ───────────────────────────────────────────
+    const handleCameraCapture = (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        // Сбрасываем input чтобы можно было снять ещё раз
+        e.target.value = ''
+        handleMediaSelect(file, 'PHOTO')
+    }
     const handleMediaSelect = async (file, mediaType) => {
         if (!activeChat) return
         setShowAttachment(false)
@@ -219,10 +234,7 @@ export default function ChatPage() {
                 (pct) => setUploadingFile(prev => ({ ...prev, progress: pct }))
             )
             const msg = res.data
-            setMessages(prev => {
-                if (prev.find(m => m.id === msg.id)) return prev
-                return [...prev, msg]
-            })
+            setMessages(prev => [...prev, msg])
             setChats(prev => prev.map(c =>
                 c.id === activeChat.id ? { ...c, lastMessage: msg } : c
             ))
@@ -852,6 +864,16 @@ export default function ChatPage() {
                         {/* ── Input area ── */}
                         <div style={s.inputArea}>
 
+                            {/* Скрытый input камеры */}
+                            <input
+                                ref={cameraInputRef}
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                style={{ display: 'none' }}
+                                onChange={handleCameraCapture}
+                            />
+
                             {/* Кнопка вложения */}
                             <div style={{ position: 'relative' }} ref={attachBtnRef}>
                                 <button
@@ -878,6 +900,19 @@ export default function ChatPage() {
                                     />
                                 )}
                             </div>
+
+                            {/* Кнопка камеры */}
+                            <button
+                                style={{
+                                    ...s.toolBtn,
+                                    color: 'var(--text-muted)',
+                                    background: 'transparent',
+                                }}
+                                onClick={() => cameraInputRef.current?.click()}
+                                title="Take photo"
+                            >
+                                <Camera size={18} />
+                            </button>
 
                             {/* Поле ввода */}
                             <div style={s.inputWrap}>

@@ -51,6 +51,6 @@ app:
         path: ./uploads
     frontend-url: http://localhost:3000
     gemini:
-        api-key: AIzaSyBpOwNR9dqVT5tB1esEH7U9R4BRswFH-Ec
+        api-key: AIzaSyBTVTcbKB8zj63pi2EBwWlTVyWsn4vDGR4
     media:
         encryption-key: a3f8e2d1c4b5a6f7e8d9c0b1a2f3e4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1
