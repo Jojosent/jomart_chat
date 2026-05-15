@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getMyProfile, updateProfile, uploadAvatar, deleteAvatar } from '../api/user'
 import useAuthStore from '../store/authStore'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { LangSwitcher } from '../components/LangSwitcher'
 
 
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react'
 
 export default function ProfilePage() {
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const updateUser = useAuthStore((s) => s.updateUser)
     const logout = useAuthStore((s) => s.logout)
