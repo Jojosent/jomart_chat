@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
 import ChatPage from './pages/ChatPage'
 import GroupSettingsPage from './pages/GroupSettingsPage'
+import AdminPage from './pages/AdminPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import AiChatPage from './pages/AiChatPage'
 
@@ -45,6 +46,9 @@ function App() {
                 } />
                 <Route path="/ai" element={
                     <ProtectedRoute><AiChatPage /></ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                    <ProtectedRoute><AdminPage /></ProtectedRoute>
                 } />
             </Routes>
         </BrowserRouter>
