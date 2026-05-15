@@ -434,7 +434,7 @@ export default function ChatPage() {
                                     gap: '4px', padding: '0 8px'
                                 }}>
                                     {[1, 2, 3, 4].map(i => (
-                                        <div key={i} style={s.skeletonItem}>
+                                            <div key={`skeleton-${i}`} style={s.skeletonItem}>
                                             <div style={s.skeletonAvatar} />
                                             <div style={{
                                                 flex: 1, display: 'flex',
