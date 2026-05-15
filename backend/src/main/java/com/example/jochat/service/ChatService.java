@@ -33,6 +33,8 @@ public class ChatService {
     @Autowired
     private UserService userService;
     @Autowired
+    private MediaService mediaService;
+    @Autowired
     private MediaMessageRepository mediaMessageRepository;
 
     // Получить или создать приватный чат
@@ -131,19 +133,7 @@ public class ChatService {
 
         // Подгружаем медиа если есть
         mediaMessageRepository.findByMessage(msg).ifPresent(media -> {
-            MediaMessageDto mediaDto = new MediaMessageDto();
-            mediaDto.setId(media.getId());
-            mediaDto.setMessageId(msg.getId());
-            mediaDto.setMediaType(media.getMediaType());
-            mediaDto.setMimeType(media.getMimeType());
-            mediaDto.setFileName(media.getFileName());
-            mediaDto.setFileSize(media.getFileSize());
-            mediaDto.setWidth(media.getWidth());
-            mediaDto.setHeight(media.getHeight());
-            mediaDto.setDuration(media.getDuration());
-            mediaDto.setViewUrl("/api/media/" + media.getStoredName());
-            mediaDto.setCreatedAt(media.getCreatedAt());
-            dto.setMedia(mediaDto);
+            dto.setMedia(mediaService.toMediaDto(media));
         });
 
         return dto;
