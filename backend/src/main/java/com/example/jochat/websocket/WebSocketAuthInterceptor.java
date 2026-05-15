@@ -43,7 +43,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                         UsernamePasswordAuthenticationToken auth =
                             new UsernamePasswordAuthenticationToken(
                                 userDetails, null,
-                                Collections.emptyList()
+                                userDetails.getAuthorities()
                             );
                         accessor.setUser(auth);
                     }
