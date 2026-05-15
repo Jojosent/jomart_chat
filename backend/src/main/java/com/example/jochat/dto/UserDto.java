@@ -13,6 +13,7 @@ public class UserDto {
     private String avatarUrl;
     private LocalDate birthDate;
     private String phone;
+    private String role;
     private boolean emailVerified;
     private boolean phoneVerified;
     private String status;
@@ -35,6 +36,7 @@ public class UserDto {
         private String avatarUrl;
         private LocalDate birthDate;
         private String phone;
+        private String role;
         private boolean emailVerified;
         private boolean phoneVerified;
         private String status;
@@ -80,6 +82,11 @@ public class UserDto {
             return this;
         }
 
+        public Builder role(String role) {
+            this.role = role;
+            return this;
+        }
+
         public Builder emailVerified(boolean emailVerified) {
             this.emailVerified = emailVerified;
             return this;
@@ -110,6 +117,7 @@ public class UserDto {
             dto.avatarUrl = this.avatarUrl;
             dto.birthDate = this.birthDate;
             dto.phone = this.phone;
+            dto.role = this.role;
             dto.emailVerified = this.emailVerified;
             dto.phoneVerified = this.phoneVerified;
             dto.status = this.status;
@@ -180,6 +188,14 @@ public class UserDto {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public boolean isEmailVerified() {

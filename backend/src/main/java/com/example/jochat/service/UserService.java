@@ -168,6 +168,7 @@ public class UserService {
         dto.setAvatarUrl(user.getAvatarUrl());
         dto.setBirthDate(user.getBirthDate());
         dto.setPhone(user.getPhone());
+        dto.setRole(user.getRole() != null ? user.getRole().name() : "USER");
         dto.setEmailVerified(user.isEmailVerified());
         dto.setPhoneVerified(user.isPhoneVerified());
         dto.setStatus(user.getStatus().name());

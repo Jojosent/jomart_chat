@@ -8,7 +8,7 @@ import { LangSwitcher } from '../components/LangSwitcher'
 import {
     ArrowLeft, LogOut, Camera, Trash2, Edit3, Check, X,
     Mail, Phone, Calendar, FileText, AtSign, User,
-    ShieldCheck, ShieldOff, ChevronRight
+    ShieldCheck, ShieldOff, ChevronRight, Settings
 } from 'lucide-react'
 
 export default function ProfilePage() {
@@ -237,6 +237,38 @@ export default function ProfilePage() {
                         />
                     </div>
                 </div>
+
+                {/* Language card */}
+                <div style={s.card}>
+                    <div style={s.cardHeader}>
+                        <div style={s.cardTitleRow}>
+                            <div style={s.cardIconWrap}>
+                                <Settings size={14} color="var(--accent)" />
+                            </div>
+                            <span style={s.cardTitle}>{t('lang.select', 'Language')}</span>
+                        </div>
+                    </div>
+                    <div style={{ padding: '16px 20px' }}>
+                        <LangSwitcher />
+                    </div>
+                </div>
+
+                {/* Admin card */}
+                {profile?.role === 'ADMIN' && (
+                    <div style={s.card}>
+                        <div style={s.cardHeader}>
+                            <div style={s.cardTitleRow}>
+                                <div style={s.cardIconWrap}>
+                                    <ShieldCheck size={14} color="var(--accent)" />
+                                </div>
+                                <span style={s.cardTitle}>{t('admin.title', 'Admin Panel')}</span>
+                            </div>
+                            <button style={s.editBtn} onClick={() => navigate('/admin')}>
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Security card */}
                 <div style={s.card}>
