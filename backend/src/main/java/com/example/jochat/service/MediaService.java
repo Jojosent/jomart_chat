@@ -200,7 +200,7 @@ public class MediaService {
         dto.setHeight(m.getHeight());
         dto.setDuration(m.getDuration());
         // URL для стриминга — контроллер дешифрует на лету
-        dto.setViewUrl("/api/media/" + m.getStoredName());
+        dto.setViewUrl("media/" + m.getStoredName());
         dto.setCreatedAt(m.getCreatedAt());
         return dto;
     }
