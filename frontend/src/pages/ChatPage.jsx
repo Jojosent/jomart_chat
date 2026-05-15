@@ -73,6 +73,11 @@ export default function ChatPage() {
         // onMessage
         (msg) => {
             setMessages(prev => {
+                // Если пришло сообщение с тем же ID, обновляем его (могло прийти через REST и WS)
+                if (prev.find(m => m.id === msg.id)) {
+                    return prev.map(m => m.id === msg.id ? msg : m)
+                }
+                // Если мы отправили сообщение, заменяем temp сообщение на реальное
                 if (msg.senderId === me?.id) {
                     const hasTemp = prev.some(m => m.temp && m.chatId === msg.chatId)
                     if (hasTemp) {
@@ -82,7 +87,6 @@ export default function ChatPage() {
                             i === prev.length - 1 - idx ? msg : m)
                     }
                 }
-                if (prev.find(m => m.id === msg.id)) return prev
                 return [...prev, msg]
             })
             setChats(prev => prev.map(c =>
@@ -215,7 +219,10 @@ export default function ChatPage() {
                 (pct) => setUploadingFile(prev => ({ ...prev, progress: pct }))
             )
             const msg = res.data
-            setMessages(prev => [...prev, msg])
+            setMessages(prev => {
+                if (prev.find(m => m.id === msg.id)) return prev
+                return [...prev, msg]
+            })
             setChats(prev => prev.map(c =>
                 c.id === activeChat.id ? { ...c, lastMessage: msg } : c
             ))
