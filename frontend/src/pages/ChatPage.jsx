@@ -21,7 +21,7 @@ import {
     Search, Bell, Bot, Users, User, Plus,
     Settings, Circle, Trash2,
     MessageSquare, X, ChevronRight,
-    Paperclip, Smile, Send, Camera,
+    Paperclip, Smile, Send,
 } from 'lucide-react'
 
 export default function ChatPage() {
@@ -53,7 +53,6 @@ export default function ChatPage() {
     const inputRef = useRef(null)
     const attachBtnRef = useRef(null)
     const stickerBtnRef = useRef(null)
-    const cameraInputRef = useRef(null)
 
     const {
         unreadCount, addNotification, fetchUnreadCount, resetUnread,
@@ -74,16 +73,38 @@ export default function ChatPage() {
         // onMessage
         (msg) => {
             setMessages(prev => {
+                // Дедупликация по реальному id (уже есть в списке)
+                if (prev.find(m => m.id === msg.id)) return prev
+
                 if (msg.senderId === me?.id) {
-                    const hasTemp = prev.some(m => m.temp && m.chatId === msg.chatId)
-                    if (hasTemp) {
-                        const idx = [...prev].reverse()
-                            .findIndex(m => m.temp && m.chatId === msg.chatId)
-                        return prev.map((m, i) =>
-                            i === prev.length - 1 - idx ? msg : m)
+                    // Для медиа — ищем temp-медиа заглушку по chatId
+                    if (msg.media) {
+                        const hasTempMedia = prev.some(
+                            m => m.temp && m.chatId === msg.chatId && m.media
+                        )
+                        if (hasTempMedia) {
+                            const idx = [...prev].reverse().findIndex(
+                                m => m.temp && m.chatId === msg.chatId && m.media
+                            )
+                            return prev.map((m, i) =>
+                                i === prev.length - 1 - idx ? msg : m
+                            )
+                        }
+                    } else {
+                        // Для текстовых — ищем temp без медиа
+                        const hasTempText = prev.some(
+                            m => m.temp && m.chatId === msg.chatId && !m.media
+                        )
+                        if (hasTempText) {
+                            const idx = [...prev].reverse().findIndex(
+                                m => m.temp && m.chatId === msg.chatId && !m.media
+                            )
+                            return prev.map((m, i) =>
+                                i === prev.length - 1 - idx ? msg : m
+                            )
+                        }
                     }
                 }
-                if (prev.find(m => m.id === msg.id)) return prev
                 return [...prev, msg]
             })
             setChats(prev => prev.map(c =>
@@ -117,24 +138,13 @@ export default function ChatPage() {
     )
 
     // ── Effects ──────────────────────────────────────────────────
-    const isInitialLoadRef = useRef(false)
-
     useEffect(() => { fetchChats() }, [])
     useEffect(() => { activeChatRef.current = activeChat }, [activeChat])
     useEffect(() => {
-        if (messages.length === 0) return
-        if (isInitialLoadRef.current) {
-            // Первая загрузка чата — мгновенно прыгаем вниз
-            messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
-            isInitialLoadRef.current = false
-        } else {
-            // Новое сообщение — плавно
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-        }
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages])
     useEffect(() => {
         if (activeChat) {
-            isInitialLoadRef.current = true
             fetchMessages(activeChat.id)
             markRead(activeChat.id)
         }
@@ -212,18 +222,33 @@ export default function ChatPage() {
         sendMessage(activeChat.id, emoji)
     }
 
-    // ── Camera capture ───────────────────────────────────────────
-    const handleCameraCapture = (e) => {
-        const file = e.target.files?.[0]
-        if (!file) return
-        // Сбрасываем input чтобы можно было снять ещё раз
-        e.target.value = ''
-        handleMediaSelect(file, 'PHOTO')
-    }
+    // ── Upload media ─────────────────────────────────────────────
     const handleMediaSelect = async (file, mediaType) => {
         if (!activeChat) return
         setShowAttachment(false)
 
+        // Temp-заглушка — показываем сразу, пока идёт загрузка
+        const tempId = `temp-media-${Date.now()}`
+        const tempMsg = {
+            id: tempId,
+            chatId: activeChat.id,
+            senderId: me?.id,
+            senderName: me?.fullName,
+            senderAvatar: me?.avatarUrl,
+            content: '[MEDIA]',
+            status: 'SENT',
+            edited: false,
+            deleted: false,
+            createdAt: new Date().toISOString(),
+            temp: true,
+            media: {
+                mediaType,
+                fileName: file.name,
+                fileSize: file.size,
+                viewUrl: null,
+            },
+        }
+        setMessages(prev => [...prev, tempMsg])
         setUploadingFile({ name: file.name, progress: 0 })
 
         try {
@@ -234,14 +259,23 @@ export default function ChatPage() {
                 (pct) => setUploadingFile(prev => ({ ...prev, progress: pct }))
             )
             const msg = res.data
-            setMessages(prev => [...prev, msg])
+
+            // Заменяем temp на реальное сообщение.
+            // Если WebSocket уже успел доставить его — просто убираем temp,
+            // дедупликация в onMessage не даст добавить дубликат.
+            setMessages(prev => {
+                if (prev.find(m => m.id === msg.id)) {
+                    return prev.filter(m => m.id !== tempId)
+                }
+                return prev.map(m => m.id === tempId ? msg : m)
+            })
             setChats(prev => prev.map(c =>
                 c.id === activeChat.id ? { ...c, lastMessage: msg } : c
             ))
-            // Уведомляем других участников через WS
-            // (бэкенд отдаёт полный MessageDto — просто добавляем в список)
         } catch (err) {
             console.error('Upload failed:', err)
+            // Убираем заглушку при ошибке
+            setMessages(prev => prev.filter(m => m.id !== tempId))
         } finally {
             setUploadingFile(null)
         }
@@ -453,7 +487,7 @@ export default function ChatPage() {
                                     gap: '4px', padding: '0 8px'
                                 }}>
                                     {[1, 2, 3, 4].map(i => (
-                                            <div key={`skeleton-${i}`} style={s.skeletonItem}>
+                                        <div key={`skeleton-${i}`} style={s.skeletonItem}>
                                             <div style={s.skeletonAvatar} />
                                             <div style={{
                                                 flex: 1, display: 'flex',
@@ -864,16 +898,6 @@ export default function ChatPage() {
                         {/* ── Input area ── */}
                         <div style={s.inputArea}>
 
-                            {/* Скрытый input камеры */}
-                            <input
-                                ref={cameraInputRef}
-                                type="file"
-                                accept="image/*"
-                                capture="environment"
-                                style={{ display: 'none' }}
-                                onChange={handleCameraCapture}
-                            />
-
                             {/* Кнопка вложения */}
                             <div style={{ position: 'relative' }} ref={attachBtnRef}>
                                 <button
@@ -900,19 +924,6 @@ export default function ChatPage() {
                                     />
                                 )}
                             </div>
-
-                            {/* Кнопка камеры */}
-                            <button
-                                style={{
-                                    ...s.toolBtn,
-                                    color: 'var(--text-muted)',
-                                    background: 'transparent',
-                                }}
-                                onClick={() => cameraInputRef.current?.click()}
-                                title="Take photo"
-                            >
-                                <Camera size={18} />
-                            </button>
 
                             {/* Поле ввода */}
                             <div style={s.inputWrap}>
