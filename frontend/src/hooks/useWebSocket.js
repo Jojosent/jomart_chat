@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Client } from '@stomp/stompjs'
 
 export default function useWebSocket(
-    onMessage, onDelivered, onReadStatus, onTyping, onNotification
+    onMessage, onDelivered, onReadStatus, onTyping, onNotification, onDelete
 ) {
     const clientRef = useRef(null)
     const [connected, setConnected] = useState(false)
@@ -47,6 +47,11 @@ export default function useWebSocket(
 
                 client.subscribe('/user/queue/notifications', (msg) => {
                     try { if (onNotification) onNotification(JSON.parse(msg.body)) }
+                    catch (e) { console.error(e) }
+                })
+
+                client.subscribe('/user/queue/delete', (msg) => {
+                    try { if (onDelete) onDelete(JSON.parse(msg.body)) }
                     catch (e) { console.error(e) }
                 })
             },

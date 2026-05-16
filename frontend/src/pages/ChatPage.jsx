@@ -16,6 +16,8 @@ import AttachmentPicker from '../components/AttachmentPicker'
 import StickerPicker from '../components/StickerPicker'
 import MediaMessage from '../components/MediaMessage'
 import UploadProgress from '../components/UploadProgress'
+import ForwardModal from '../components/ForwardModal'
+import CameraModal from '../components/CameraModal'
 
 import {
     Search, Bell, Bot, Users, User, Plus,
@@ -41,6 +43,10 @@ export default function ChatPage() {
     const [showCreateGroup, setShowCreateGroup] = useState(false)
     const [showNotifications, setShowNotifications] = useState(false)
 
+    // Modals for Forward & Camera
+    const [forwardMsgId, setForwardMsgId] = useState(null)
+    const [showCamera, setShowCamera] = useState(false)
+
     // ── Attachment / Sticker state ───────────────────────────────
     const [showAttachment, setShowAttachment] = useState(false)
     const [showSticker, setShowSticker] = useState(false)
@@ -49,6 +55,7 @@ export default function ChatPage() {
     // ── Refs ─────────────────────────────────────────────────────
     const activeChatRef = useRef(null)
     const messagesEndRef = useRef(null)
+    const scrollFlagRef = useRef('smooth') // 'auto' (instant) or 'smooth'
     const typingTimerRef = useRef(null)
     const inputRef = useRef(null)
     const attachBtnRef = useRef(null)
@@ -134,17 +141,29 @@ export default function ChatPage() {
             }
         },
         // onNotification
-        (notification) => { addNotification(notification) }
+        (notification) => { addNotification(notification) },
+        // onDelete
+        (deletedMsg) => {
+            setMessages(prev => prev.map(m =>
+                m.id === deletedMsg.id ? { ...m, ...deletedMsg } : m
+            ))
+            setChats(prev => prev.map(c =>
+                c.id === deletedMsg.chatId ? { ...c, lastMessage: deletedMsg } : c
+            ))
+        }
     )
 
     // ── Effects ──────────────────────────────────────────────────
     useEffect(() => { fetchChats() }, [])
     useEffect(() => { activeChatRef.current = activeChat }, [activeChat])
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        messagesEndRef.current?.scrollIntoView({ behavior: scrollFlagRef.current })
+        // После прокрутки возвращаем smooth для новых сообщений
+        scrollFlagRef.current = 'smooth'
     }, [messages])
     useEffect(() => {
         if (activeChat) {
+            scrollFlagRef.current = 'auto' // Мгновенно вниз при смене чата
             fetchMessages(activeChat.id)
             markRead(activeChat.id)
         }
@@ -283,12 +302,17 @@ export default function ChatPage() {
 
     // ── Delete message ───────────────────────────────────────────
     const handleDeleteMsg = async (msgId) => {
-        await deleteMessage(msgId)
-        setMessages(prev => prev.map(m =>
-            m.id === msgId
-                ? { ...m, deleted: true, content: 'Message deleted' }
-                : m
-        ))
+        try {
+            await deleteMessage(msgId)
+            // UI обновится через WebSocket, но можно и сразу для скорости:
+            setMessages(prev => prev.map(m =>
+                m.id === msgId
+                    ? { ...m, deleted: true, content: 'Сообщение удалено' }
+                    : m
+            ))
+        } catch (err) {
+            console.error('Delete failed:', err)
+        }
     }
 
     // ── Keyboard ─────────────────────────────────────────────────
@@ -800,6 +824,7 @@ export default function ChatPage() {
                                                     <MediaMessage
                                                         media={msg.media}
                                                         isMine={isMine}
+                                                        onForward={() => setForwardMsgId(msg.id)}
                                                     />
                                                 ) : (
                                                     <>
@@ -921,6 +946,7 @@ export default function ChatPage() {
                                     <AttachmentPicker
                                         onSelect={handleMediaSelect}
                                         onClose={() => setShowAttachment(false)}
+                                        onCameraOpen={() => setShowCamera(true)}
                                     />
                                 )}
                             </div>
@@ -996,6 +1022,25 @@ export default function ChatPage() {
                         fetchChats()
                         setShowCreateGroup(false)
                     }}
+                />
+            )}
+
+            {/* Forward Modal */}
+            {forwardMsgId && (
+                <ForwardModal
+                    messageId={forwardMsgId}
+                    onClose={() => setForwardMsgId(null)}
+                    onForwarded={() => {
+                        // Можно показать тост
+                    }}
+                />
+            )}
+
+            {/* Camera Modal */}
+            {showCamera && (
+                <CameraModal
+                    onClose={() => setShowCamera(false)}
+                    onCapture={(file) => handleMediaSelect(file, 'PHOTO')}
                 />
             )}
         </div>

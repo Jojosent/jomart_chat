@@ -65,6 +65,17 @@ public class ChatController {
         );
     }
 
+    // POST /api/chats/messages/{messageId}/forward/{targetChatId} — переслать сообщение
+    @PostMapping("/messages/{messageId}/forward/{targetChatId}")
+    public ResponseEntity<MessageDto> forwardMessage(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long messageId,
+            @PathVariable Long targetChatId) {
+        return ResponseEntity.ok(
+                messageService.forwardMessage(userDetails.getUsername(), messageId, targetChatId)
+        );
+    }
+
     // POST /api/chats/check-profanity
     @PostMapping("/check-profanity")
     public ResponseEntity<?> checkProfanity(@RequestBody Map<String, String> body) {

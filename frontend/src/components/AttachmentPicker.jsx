@@ -32,7 +32,7 @@ const OPTIONS = [
     },
 ]
 
-export default function AttachmentPicker({ onSelect, onClose }) {
+export default function AttachmentPicker({ onSelect, onClose, onCameraOpen }) {
     const refs = {
         PHOTO: useRef(),
         DOCUMENT: useRef(),
@@ -52,7 +52,16 @@ export default function AttachmentPicker({ onSelect, onClose }) {
     }, [onClose])
 
     const handleOptionClick = (opt) => {
-        refs[opt.key].current.click()
+        if (opt.key === 'CAMERA') {
+            if (onCameraOpen) {
+                onCameraOpen()
+                onClose()
+            } else {
+                refs[opt.key].current.click()
+            }
+        } else {
+            refs[opt.key].current.click()
+        }
     }
 
     const handleFileChange = (e, opt) => {
