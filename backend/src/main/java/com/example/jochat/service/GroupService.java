@@ -92,8 +92,13 @@ public class GroupService {
     }
 
     // ── Получить группу ──────────────────────────────────────────
+    @Transactional(readOnly = true)
     public GroupDto getGroup(Long groupId, String email) {
-        Group group = groupRepository.findById(groupId)
+        System.out.println("Looking for group id: " + groupId);
+    System.out.println("Found with members: " + groupRepository.findByIdWithMembers(groupId).isPresent());
+    System.out.println("Found simple: " + groupRepository.findById(groupId).isPresent());
+        // JOIN FETCH — загружает members и admin сразу
+        Group group = groupRepository.findByIdWithMembers(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found"));
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -106,9 +111,11 @@ public class GroupService {
     }
 
     // ── Мои группы ───────────────────────────────────────────────
+    @Transactional(readOnly = true)
     public List<GroupDto> getMyGroups(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        // JOIN FETCH — загружает members для всех групп
         return groupRepository.findAllByMember(user)
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
@@ -327,9 +334,10 @@ public class GroupService {
         notificationRepository.save(notification);
     }
 
-    // ── Helpers ──────────────────────────────────────────────────
+// ── Helper ──────────────────────────────────────────────────
     private Group findGroupAndCheckAdmin(Long groupId, String email) {
-        Group group = groupRepository.findById(groupId)
+        // Используем JOIN FETCH чтобы members были загружены
+        Group group = groupRepository.findByIdWithMembers(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found"));
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));

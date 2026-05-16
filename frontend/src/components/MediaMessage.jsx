@@ -10,6 +10,7 @@ function useAuthBlob(url) {
     useEffect(() => {
         if (!url) return
         let objectUrl = null
+        let cancelled = false
         const token = localStorage.getItem('accessToken')
 
         fetch(url, {
@@ -20,16 +21,20 @@ function useAuthBlob(url) {
                 return r.blob()
             })
             .then(blob => {
+                if (cancelled) return
                 objectUrl = URL.createObjectURL(blob)
                 setBlobUrl(objectUrl)
             })
             .catch(err => {
-                console.error('Media load error:', err)
-                setError(true)
+                if (!cancelled) {
+                    console.error('Media load error:', err)
+                    setError(true)
+                }
             })
-            .finally(() => setLoading(false))
+            .finally(() => { if (!cancelled) setLoading(false) })
 
         return () => {
+            cancelled = true
             if (objectUrl) URL.revokeObjectURL(objectUrl)
         }
     }, [url])
@@ -58,69 +63,76 @@ export default function MediaMessage({ media, isMine, onForward }) {
     // ── PHOTO ──────────────────────────────────────────────────────
     if (media.mediaType === 'PHOTO') {
         return (
-            <div style={{
-                borderRadius: '12px',
-                overflow: 'hidden',
-                maxWidth: '280px',
-                minWidth: '120px',
-                minHeight: '80px',
-                background: 'var(--bg-elevated)',
-                position: 'relative',
-            }}>
-                {loading && (
-                    <div style={{
-                        width: '240px', height: '160px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+            <>
+                <div
+                    style={{
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        maxWidth: '280px',
+                        minWidth: '120px',
+                        minHeight: '80px',
                         background: 'var(--bg-elevated)',
-                    }}>
+                        position: 'relative',
+                        cursor: blobUrl ? 'pointer' : 'default',
+                    }}
+                    onClick={() => blobUrl && setShowViewer(true)}
+                >
+                    {loading && (
                         <div style={{
-                            width: 20, height: 20,
-                            border: '2px solid var(--border)',
-                            borderTop: '2px solid var(--accent)',
-                            borderRadius: '50%',
-                            animation: 'spin 0.7s linear infinite',
-                        }} />
-                    </div>
-                )}
-                {error && (
-                    <div style={{
-                        width: '240px', height: '120px',
-                        display: 'flex', flexDirection: 'column',
-                        alignItems: 'center', justifyContent: 'center',
-                        gap: '8px', background: 'var(--bg-elevated)',
-                        color: 'var(--text-muted)', fontSize: '13px',
-                    }}>
-                        <Image size={24} />
-                        <span>Failed to load</span>
-                    </div>
-                )}
-                {blobUrl && (
-                    <img
-                        src={blobUrl}
-                        alt={media.fileName || 'photo'}
-                        style={{
-                            display: 'block',
-                            width: '100%',
-                            maxWidth: '280px',
-                            borderRadius: '12px',
-                            cursor: 'pointer',
-                        }}
-                        onClick={() => setShowViewer(true)}
-                    />
-                )}
+                            width: '240px', height: '160px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            background: 'var(--bg-elevated)',
+                        }}>
+                            <div style={{
+                                width: 20, height: 20,
+                                border: '2px solid var(--border)',
+                                borderTop: '2px solid var(--accent)',
+                                borderRadius: '50%',
+                                animation: 'spin 0.7s linear infinite',
+                            }} />
+                        </div>
+                    )}
+                    {error && (
+                        <div style={{
+                            width: '240px', height: '120px',
+                            display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', justifyContent: 'center',
+                            gap: '8px', background: 'var(--bg-elevated)',
+                            color: 'var(--text-muted)', fontSize: '13px',
+                        }}>
+                            <Image size={24} />
+                            <span>Failed to load</span>
+                        </div>
+                    )}
+                    {blobUrl && (
+                        <img
+                            src={blobUrl}
+                            alt={media.fileName || 'photo'}
+                            style={{
+                                display: 'block',
+                                width: '100%',
+                                maxWidth: '280px',
+                                borderRadius: '12px',
+                            }}
+                        />
+                    )}
+                </div>
 
+                {/* Viewer рендерим ВНЕ bubble — в портале через state */}
                 {showViewer && (
                     <MediaViewer
                         media={media}
                         blobUrl={blobUrl}
                         onClose={() => setShowViewer(false)}
                         onForward={() => {
+                            // Сначала закрываем viewer, потом открываем ForwardModal
                             setShowViewer(false)
+                            // onForward вызовет setForwardMsgId в ChatPage
                             if (onForward) onForward()
                         }}
                     />
                 )}
-            </div>
+            </>
         )
     }
 

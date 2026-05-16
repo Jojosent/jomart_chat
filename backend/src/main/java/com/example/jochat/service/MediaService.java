@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.nio.file.*;
 import java.util.UUID;
 
@@ -31,7 +31,8 @@ public class MediaService {
     private UserRepository userRepository;
     @Autowired
     private FileEncryptionService encryptionService;
-    @Autowired @Lazy
+    @Autowired
+    @Lazy
     private ChatService chatService;
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
@@ -39,6 +40,7 @@ public class MediaService {
     @Value("${app.upload.path}")
     private String uploadPath;
 
+    // ── Получить расшифрованные байты по storedName ──────────────
     // ── Загрузить медиа и создать сообщение ─────────────────────
     @Transactional
     public MessageDto uploadMedia(String senderEmail,
@@ -114,13 +116,13 @@ public class MediaService {
         return dto;
     }
 
-    // ── Получить расшифрованные байты по storedName ──────────────
+// ── Получить расшифрованные байты по storedName ──────────────
+    @Transactional(readOnly = true)
     public DecryptedFile getDecryptedFile(String storedName, String requestorEmail) throws Exception {
-        // Проверяем что файл существует
+        // Загружаем с JOIN FETCH — chat и members уже в памяти
         MediaMessage media = mediaMessageRepository.findByStoredName(storedName)
                 .orElseThrow(() -> new RuntimeException("File not found"));
 
-        // Проверяем что пользователь является участником чата
         User user = userRepository.findByEmail(requestorEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -201,7 +203,7 @@ public class MediaService {
         dto.setHeight(m.getHeight());
         dto.setDuration(m.getDuration());
         // URL для стриминга — контроллер дешифрует на лету
-        dto.setViewUrl("media/" + m.getStoredName());
+        dto.setViewUrl("/api/media/" + m.getStoredName());
         dto.setCreatedAt(m.getCreatedAt());
         return dto;
     }
@@ -219,4 +221,5 @@ public class MediaService {
             this.fileName = fileName;
         }
     }
+
 }
