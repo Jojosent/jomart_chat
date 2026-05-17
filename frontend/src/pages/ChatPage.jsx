@@ -21,7 +21,7 @@ import CameraModal from '../components/CameraModal'
 
 import {
     Search, Bell, Bot, Users, User, Plus,
-    Settings, Circle, Trash2,
+    Settings, Circle, Trash2, Forward,
     MessageSquare, X, ChevronRight,
     Paperclip, Smile, Send,
 } from 'lucide-react'
@@ -119,6 +119,7 @@ export default function ChatPage() {
             ))
             if (msg.chatId === activeChatRef.current?.id &&
                 msg.senderId !== me?.id) {
+
                 markRead(msg.chatId)
             }
         },
@@ -755,17 +756,27 @@ export default function ChatPage() {
                                             </div>
                                         )}
 
-                                        {/* Кнопка удаления — появляется при hover */}
-                                        {isMine && !msg.deleted && isHov && (
-                                            <button
-                                                style={s.deleteHoverBtn}
-                                                onClick={() => handleDeleteMsg(msg.id)}
-                                                title="Delete"
-                                            >
-                                                <Trash2 size={13} />
-                                            </button>
+                                        {/* Кнопки действий при hover — Forward и Delete */}
+                                        {isHov && !msg.deleted && (
+                                            <div style={s.msgHoverActions}>
+                                                <button
+                                                    style={s.forwardHoverBtn}
+                                                    onClick={() => setForwardMsgId(msg.id)}
+                                                    title="Forward"
+                                                >
+                                                    <Forward size={13} />
+                                                </button>
+                                                {isMine && (
+                                                    <button
+                                                        style={s.deleteHoverBtn}
+                                                        onClick={() => handleDeleteMsg(msg.id)}
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 size={13} />
+                                                    </button>
+                                                )}
+                                            </div>
                                         )}
-
                                         {/* ── Стикер (большой эмодзи без bubble) ── */}
                                         {isSticker ? (
                                             <div style={s.stickerMsg}>
@@ -1030,8 +1041,18 @@ export default function ChatPage() {
                 <ForwardModal
                     messageId={forwardMsgId}
                     onClose={() => setForwardMsgId(null)}
-                    onForwarded={() => {
-                        // Можно показать тост
+                    onForwarded={(msg) => {
+                        if (!msg) return
+                        // Обновляем lastMessage в сайдбаре для целевого чата
+                        setChats(prev => prev.map(c =>
+                            c.id === msg.chatId ? { ...c, lastMessage: msg } : c
+                        ))
+                        // Добавляем в messages ТОЛЬКО если находимся в том же чате
+                        if (msg.chatId === activeChatRef.current?.id) {
+                            setMessages(prev =>
+                                prev.find(m => m.id === msg.id) ? prev : [...prev, msg]
+                            )
+                        }
                     }}
                 />
             )}
@@ -1055,7 +1076,21 @@ const s = {
         fontFamily: "'Inter', sans-serif",
         color: 'var(--text-primary)', overflow: 'hidden',
     },
-
+    msgHoverActions: {
+        display: 'flex',
+        gap: '4px',
+        alignSelf: 'center',
+        flexShrink: 0,
+        animation: 'fadeIn 0.1s ease',
+    },
+    forwardHoverBtn: {
+        background: 'var(--accent-bg)',
+        border: '1px solid var(--accent-bg-hover)',
+        borderRadius: '8px', padding: '6px',
+        color: 'var(--accent)', cursor: 'pointer',
+        display: 'flex', alignItems: 'center',
+        transition: 'opacity 0.15s',
+    },
     /* Sidebar */
     sidebar: {
         width: '300px', minWidth: '300px',

@@ -7,6 +7,7 @@ import GroupSettingsPage from './pages/GroupSettingsPage'
 import AdminPage from './pages/AdminPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import AiChatPage from './pages/AiChatPage'
+import AdminGuard from './components/AdminGuard'
 
 function ChatPlaceholder() {
     const navigate = () => window.location.href = '/profile'
@@ -48,7 +49,11 @@ function App() {
                     <ProtectedRoute><AiChatPage /></ProtectedRoute>
                 } />
                 <Route path="/admin" element={
-                    <ProtectedRoute><AdminPage /></ProtectedRoute>
+                    <ProtectedRoute>
+                        <AdminGuard>         {/* ← оборачиваем */}
+                            <AdminPage />
+                        </AdminGuard>
+                    </ProtectedRoute>
                 } />
             </Routes>
         </BrowserRouter>

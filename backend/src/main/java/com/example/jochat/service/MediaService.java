@@ -12,8 +12,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.transaction.annotation.Transactional;
 import java.nio.file.*;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -21,26 +21,17 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 @Service
 public class MediaService {
 
-    @Autowired
-    private MediaMessageRepository mediaMessageRepository;
-    @Autowired
-    private MessageRepository messageRepository;
-    @Autowired
-    private ChatRepository chatRepository;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private FileEncryptionService encryptionService;
-    @Autowired
-    @Lazy
-    private ChatService chatService;
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    @Autowired private MediaMessageRepository mediaMessageRepository;
+    @Autowired private MessageRepository messageRepository;
+    @Autowired private ChatRepository chatRepository;
+    @Autowired private UserRepository userRepository;
+    @Autowired private FileEncryptionService encryptionService;
+    @Autowired @Lazy private ChatService chatService;
+    @Autowired private SimpMessagingTemplate messagingTemplate;
 
     @Value("${app.upload.path}")
     private String uploadPath;
 
-    // ── Получить расшифрованные байты по storedName ──────────────
     // ── Загрузить медиа и создать сообщение ─────────────────────
     @Transactional
     public MessageDto uploadMedia(String senderEmail,
@@ -116,22 +107,35 @@ public class MediaService {
         return dto;
     }
 
-// ── Получить расшифрованные байты по storedName ──────────────
+    // ── Получить расшифрованные байты по storedName ──────────────
+    // ИСПРАВЛЕНИЕ: проверяем членство в чате САМОГО media-сообщения,
+    // а не оригинала (при пересылке storedName тот же, но message другой)
     @Transactional(readOnly = true)
     public DecryptedFile getDecryptedFile(String storedName, String requestorEmail) throws Exception {
-        // Загружаем с JOIN FETCH — chat и members уже в памяти
-        MediaMessage media = mediaMessageRepository.findByStoredName(storedName)
-                .orElseThrow(() -> new RuntimeException("File not found"));
-
         User user = userRepository.findByEmail(requestorEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Chat chat = media.getMessage().getChat();
-        boolean isMember = chat.getMembers().stream()
-                .anyMatch(m -> m.getId().equals(user.getId()));
-        if (!isMember) {
+        // Ищем ВСЕ MediaMessage с данным storedName (оригинал + все пересланные копии)
+        List<MediaMessage> mediaList = mediaMessageRepository.findAllByStoredName(storedName);
+
+        if (mediaList.isEmpty()) {
+            throw new RuntimeException("File not found");
+        }
+
+        // Проверяем: пользователь должен быть членом хотя бы одного чата,
+        // к которому привязан файл (оригинал или пересланная копия)
+        boolean hasAccess = mediaList.stream().anyMatch(media -> {
+            Chat chat = media.getMessage().getChat();
+            return chat.getMembers().stream()
+                    .anyMatch(m -> m.getId().equals(user.getId()));
+        });
+
+        if (!hasAccess) {
             throw new RuntimeException("Access denied");
         }
+
+        // Берём первый (неважно какой — файл один и тот же)
+        MediaMessage media = mediaList.get(0);
 
         // Дешифруем
         Path storedPath = Paths.get(uploadPath, "media", storedName);
@@ -148,14 +152,10 @@ public class MediaService {
         }
 
         long maxSize = switch (mediaType.toUpperCase()) {
-            case "PHOTO" ->
-                20L * 1024 * 1024;   // 20 MB
-            case "VIDEO" ->
-                200L * 1024 * 1024;   // 200 MB
-            case "DOCUMENT" ->
-                50L * 1024 * 1024;   // 50 MB
-            default ->
-                throw new RuntimeException("Unknown media type: " + mediaType);
+            case "PHOTO"    -> 20L  * 1024 * 1024;
+            case "VIDEO"    -> 200L * 1024 * 1024;
+            case "DOCUMENT" -> 50L  * 1024 * 1024;
+            default -> throw new RuntimeException("Unknown media type: " + mediaType);
         };
 
         if (file.getSize() > maxSize) {
@@ -168,27 +168,15 @@ public class MediaService {
         }
 
         boolean valid = switch (mediaType.toUpperCase()) {
-            case "PHOTO" ->
-                mime.startsWith("image/");
-            case "VIDEO" ->
-                mime.startsWith("video/");
-            case "DOCUMENT" ->
-                true;   // любой тип документа
-            default ->
-                false;
+            case "PHOTO"    -> mime.startsWith("image/");
+            case "VIDEO"    -> mime.startsWith("video/");
+            case "DOCUMENT" -> true;
+            default         -> false;
         };
 
         if (!valid) {
             throw new RuntimeException("Invalid file type for " + mediaType);
         }
-    }
-
-    private String getExt(String name) {
-        if (name == null) {
-            return "bin";
-        }
-        int i = name.lastIndexOf('.');
-        return i >= 0 ? name.substring(i + 1).toLowerCase() : "bin";
     }
 
     public MediaMessageDto toMediaDto(MediaMessage m) {
@@ -202,7 +190,6 @@ public class MediaService {
         dto.setWidth(m.getWidth());
         dto.setHeight(m.getHeight());
         dto.setDuration(m.getDuration());
-        // URL для стриминга — контроллер дешифрует на лету
         dto.setViewUrl("/api/media/" + m.getStoredName());
         dto.setCreatedAt(m.getCreatedAt());
         return dto;
@@ -210,16 +197,14 @@ public class MediaService {
 
     // ── Inner result class ───────────────────────────────────────
     public static class DecryptedFile {
-
         public final byte[] bytes;
         public final String mimeType;
         public final String fileName;
 
         public DecryptedFile(byte[] bytes, String mimeType, String fileName) {
-            this.bytes = bytes;
+            this.bytes    = bytes;
             this.mimeType = mimeType;
             this.fileName = fileName;
         }
     }
-
 }

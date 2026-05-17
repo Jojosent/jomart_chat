@@ -128,6 +128,7 @@ public class AuthService {
         return UserDto.builder()
                 .id(user.getId())
                 .email(user.getEmail())
+                .role(user.getRole() != null ? user.getRole().name() : "USER")
                 .username(user.getUsername())
                 .fullName(user.getFullName())
                 .bio(user.getBio())

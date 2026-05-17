@@ -21,13 +21,20 @@ import java.util.List;
 @Service
 public class MessageService {
 
-    @Autowired private MessageRepository messageRepository;
-    @Autowired private ChatRepository chatRepository;
-    @Autowired private UserRepository userRepository;
-    @Autowired private ChatService chatService;
-    @Autowired private ProfanityFilterService profanityFilterService;
-    @Autowired private SimpMessagingTemplate messagingTemplate;
-    @Autowired private MediaMessageRepository mediaMessageRepository;
+    @Autowired
+    private MessageRepository messageRepository;
+    @Autowired
+    private ChatRepository chatRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private ChatService chatService;
+    @Autowired
+    private ProfanityFilterService profanityFilterService;
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+    @Autowired
+    private MediaMessageRepository mediaMessageRepository;
 
     // ── Отправить сообщение (SENT) ───────────────────────────────
     @Transactional
@@ -37,8 +44,9 @@ public class MessageService {
         Chat chat = chatRepository.findById(request.getChatId())
                 .orElseThrow(() -> new RuntimeException("Chat not found"));
 
-        if (!chat.getMembers().contains(sender))
+        if (!chat.getMembers().contains(sender)) {
             throw new RuntimeException("Access denied");
+        }
 
         String filtered = profanityFilterService.filter(request.getContent());
 
@@ -63,7 +71,6 @@ public class MessageService {
         Chat chat = chatRepository.findById(chatId)
                 .orElseThrow(() -> new RuntimeException("Chat not found"));
 
-        // Все SENT сообщения НЕ от получателя → DELIVERED
         List<Message> sentMessages = messageRepository
                 .findByChatAndStatusAndSenderNot(chat, Message.MessageStatus.SENT, receiver);
 
@@ -85,7 +92,6 @@ public class MessageService {
         Chat chat = chatRepository.findById(chatId)
                 .orElseThrow(() -> new RuntimeException("Chat not found"));
 
-        // Все SENT и DELIVERED сообщения НЕ от читателя → READ
         List<Message> unread = messageRepository
                 .findUnreadMessages(chat, reader);
 
@@ -110,14 +116,15 @@ public class MessageService {
         Chat targetChat = chatRepository.findById(targetChatId)
                 .orElseThrow(() -> new RuntimeException("Target chat not found"));
 
-        if (!targetChat.getMembers().contains(me))
+        if (!targetChat.getMembers().contains(me)) {
             throw new RuntimeException("Access denied");
+        }
 
         // Создаем новое сообщение
         Message forwarded = new Message();
         forwarded.setChat(targetChat);
         forwarded.setSender(me);
-        forwarded.setContent(original.getContent());
+        forwarded.setContent(original.isDeleted() ? "" : original.getContent());
         forwarded.setStatus(Message.MessageStatus.SENT);
         messageRepository.save(forwarded);
 
@@ -129,6 +136,8 @@ public class MessageService {
             MediaMessage newMedia = new MediaMessage();
             newMedia.setMessage(forwarded);
             newMedia.setFileName(origMedia.getFileName());
+            // ─── КЛЮЧЕВОЕ: сохраняем storedName оригинала, но привязываем к targetChat
+            // через новое сообщение — доступ будет проверяться по targetChat, не original
             newMedia.setStoredName(origMedia.getStoredName());
             newMedia.setMediaType(origMedia.getMediaType());
             newMedia.setMimeType(origMedia.getMimeType());
@@ -142,13 +151,16 @@ public class MessageService {
 
         MessageDto dto = chatService.toMessageDto(forwarded);
 
-        // Broadcast to target chat
+        // ── Рассылаем только ДРУГИМ участникам (не отправителю)
+        // Отправитель получит сообщение из REST-ответа, дубликат не нужен
         targetChat.getMembers().forEach(member -> {
-            messagingTemplate.convertAndSendToUser(
-                member.getEmail(),
-                "/queue/messages",
-                dto
-            );
+            if (!member.getEmail().equals(email)) {
+                messagingTemplate.convertAndSendToUser(
+                        member.getEmail(),
+                        "/queue/messages",
+                        dto
+                );
+            }
         });
 
         return dto;
@@ -162,8 +174,9 @@ public class MessageService {
         Message msg = messageRepository.findById(messageId)
                 .orElseThrow(() -> new RuntimeException("Message not found"));
 
-        if (!msg.getSender().getId().equals(user.getId()))
+        if (!msg.getSender().getId().equals(user.getId())) {
             throw new RuntimeException("You can only delete your own messages");
+        }
 
         msg.setDeleted(true);
         msg.setContent("Сообщение удалено");
@@ -171,12 +184,11 @@ public class MessageService {
 
         MessageDto dto = chatService.toMessageDto(msg);
 
-        // Рассылаем всем участникам уведомление об удалении
         msg.getChat().getMembers().forEach(member -> {
             messagingTemplate.convertAndSendToUser(
-                member.getEmail(),
-                "/queue/delete",
-                dto
+                    member.getEmail(),
+                    "/queue/delete",
+                    dto
             );
         });
 
