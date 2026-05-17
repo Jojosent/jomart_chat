@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../api/auth'
+import { useTranslation } from 'react-i18next'
 import {
     Search, Shield, Trash2, ChevronDown, ChevronUp,
     User as UserIcon, Crown, CheckCircle, XCircle,
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react'
 
 export default function AdminUsersTab() {
+    const { t } = useTranslation()
     const [users, setUsers] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
@@ -27,7 +29,7 @@ export default function AdminUsersTab() {
         try {
             const res = await api.get('/admin/users')
             setUsers(res.data)
-        } catch { setError('Failed to load users') }
+        } catch { setError(t('admin.loadUsersError', 'Failed to load users')) }
         finally { setLoading(false) }
     }
 
@@ -38,7 +40,7 @@ export default function AdminUsersTab() {
             const res = await api.patch(`/admin/users/${user.id}/role`, { role: newRole })
             setUsers(prev => prev.map(u => u.id === user.id ? res.data : u))
             if (selectedUser?.id === user.id) setSelectedUser(res.data)
-        } catch { setError('Failed to update role') }
+        } catch { setError(t('admin.roleUpdateError', 'Failed to update role')) }
         finally { setActionLoading(null) }
     }
 
@@ -49,7 +51,7 @@ export default function AdminUsersTab() {
             setUsers(prev => prev.filter(u => u.id !== userId))
             if (selectedUser?.id === userId) setSelectedUser(null)
             setConfirmDelete(null)
-        } catch { setError('Failed to delete user') }
+        } catch { setError(t('admin.deleteUserError', 'Failed to delete user')) }
         finally { setActionLoading(null) }
     }
 
@@ -89,7 +91,7 @@ export default function AdminUsersTab() {
     if (loading) return (
         <div style={u.center}>
             <div style={u.spinner} />
-            <span style={u.loadingText}>Loading users...</span>
+            <span style={u.loadingText}>{t('admin.loadingUsers', 'Loading users...')}</span>
         </div>
     )
 
@@ -110,7 +112,7 @@ export default function AdminUsersTab() {
                         style={u.searchInput}
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        placeholder="Search by name, username or email..."
+                        placeholder={t('chat.searchPlaceholder')}
                     />
                     {search && (
                         <button style={u.clearBtn} onClick={() => setSearch('')}>
@@ -124,24 +126,24 @@ export default function AdminUsersTab() {
                         value={filterRole}
                         onChange={setFilterRole}
                         options={[
-                            { value: 'ALL', label: 'All Roles' },
-                            { value: 'USER', label: 'Users' },
-                            { value: 'ADMIN', label: 'Admins' },
+                            { value: 'ALL', label: t('admin.allRoles') },
+                            { value: 'USER', label: t('admin.users') },
+                            { value: 'ADMIN', label: t('admin.admins') },
                         ]}
                     />
                     <FilterSelect
                         value={filterVerified}
                         onChange={setFilterVerified}
                         options={[
-                            { value: 'ALL', label: 'All Status' },
-                            { value: 'YES', label: 'Verified' },
-                            { value: 'NO', label: 'Unverified' },
+                            { value: 'ALL', label: t('admin.allStatus') },
+                            { value: 'YES', label: t('admin.verified') },
+                            { value: 'NO', label: t('admin.unverified') },
                         ]}
                     />
                 </div>
 
                 <div style={u.countBadge}>
-                    {filtered.length} / {users.length} users
+                    {filtered.length} / {users.length} {t('admin.users').toLowerCase()}
                 </div>
             </div>
 
@@ -153,12 +155,12 @@ export default function AdminUsersTab() {
                         <thead>
                             <tr>
                                 {[
-                                    { col: 'fullName', label: 'User' },
-                                    { col: 'email', label: 'Email' },
-                                    { col: 'role', label: 'Role' },
-                                    { col: 'emailVerified', label: 'Verified' },
-                                    { col: 'status', label: 'Status' },
-                                    { col: null, label: 'Actions' },
+                                    { col: 'fullName', label: t('profile.fullName') },
+                                    { col: 'email', label: t('profile.email') },
+                                    { col: 'role', label: t('common.role', 'Role') },
+                                    { col: 'emailVerified', label: t('admin.verified') },
+                                    { col: 'status', label: t('common.status', 'Status') },
+                                    { col: null, label: t('common.actions', 'Actions') },
                                 ].map(({ col, label }) => (
                                     <th
                                         key={label}
@@ -178,7 +180,7 @@ export default function AdminUsersTab() {
                                 <tr>
                                     <td colSpan={6} style={u.emptyCell}>
                                         <UserX size={20} style={{ opacity: 0.3 }} />
-                                        <span>No users found</span>
+                                        <span>{t('chat.notFound')}</span>
                                     </td>
                                 </tr>
                             ) : filtered.map(user => {
@@ -261,7 +263,7 @@ export default function AdminUsersTab() {
                                                     style={u.actionBtn}
                                                     onClick={() => handleToggleRole(user)}
                                                     disabled={!!actionLoading}
-                                                    title={user.role === 'ADMIN' ? 'Demote to User' : 'Promote to Admin'}
+                                                    title={user.role === 'ADMIN' ? t('admin.demoteUser') : t('admin.promoteAdmin')}
                                                 >
                                                     {actionLoading === user.id + '_role'
                                                         ? <div style={u.miniSpinner} />
@@ -272,7 +274,7 @@ export default function AdminUsersTab() {
                                                     style={{ ...u.actionBtn, ...u.deleteBtn }}
                                                     onClick={() => setConfirmDelete(user)}
                                                     disabled={!!actionLoading}
-                                                    title="Delete User"
+                                                    title={t('admin.deleteUser')}
                                                 >
                                                     <Trash2 size={13} />
                                                 </button>
@@ -289,7 +291,7 @@ export default function AdminUsersTab() {
                 {selectedUser && (
                     <div style={u.detailPanel}>
                         <div style={u.detailHeader}>
-                            <span style={u.detailTitle}>User Details</span>
+                            <span style={u.detailTitle}>{t('admin.userDetails')}</span>
                             <button style={u.detailClose} onClick={() => setSelectedUser(null)}>
                                 <X size={14} />
                             </button>
@@ -324,23 +326,23 @@ export default function AdminUsersTab() {
                         </div>
 
                         <div style={u.detailFields}>
-                            <DetailField icon={<Mail size={13} />} label="Email" value={selectedUser.email} />
-                            <DetailField icon={<Phone size={13} />} label="Phone" value={selectedUser.phone || '—'} />
-                            <DetailField icon={<Calendar size={13} />} label="Birthday" value={selectedUser.birthDate || '—'} />
+                            <DetailField icon={<Mail size={13} />} label={t('profile.email')} value={selectedUser.email} />
+                            <DetailField icon={<Phone size={13} />} label={t('profile.phone')} value={selectedUser.phone || '—'} />
+                            <DetailField icon={<Calendar size={13} />} label={t('profile.birthDate')} value={selectedUser.birthDate || '—'} />
                             <DetailField
                                 icon={<CheckCircle size={13} />}
-                                label="Email Verified"
-                                value={selectedUser.emailVerified ? 'Yes' : 'No'}
+                                label={t('profile.emailVerified')}
+                                value={selectedUser.emailVerified ? t('profile.yes') : t('profile.no')}
                                 valueColor={selectedUser.emailVerified ? '#10b981' : '#f87171'}
                             />
                             <DetailField
                                 icon={<UserIcon size={13} />}
-                                label="Status"
+                                label={t('common.status', 'Status')}
                                 value={selectedUser.status}
                                 valueColor={selectedUser.status === 'ONLINE' ? '#10b981' : 'rgba(255,255,255,0.4)'}
                             />
                             {selectedUser.bio && (
-                                <DetailField icon={<AtSign size={13} />} label="Bio" value={selectedUser.bio} />
+                                <DetailField icon={<AtSign size={13} />} label={t('profile.bio')} value={selectedUser.bio} />
                             )}
                         </div>
 
@@ -360,7 +362,7 @@ export default function AdminUsersTab() {
                                 disabled={!!actionLoading}
                             >
                                 <Shield size={14} />
-                                {selectedUser.role === 'ADMIN' ? 'Demote to User' : 'Promote to Admin'}
+                                {selectedUser.role === 'ADMIN' ? t('admin.demoteUser') : t('admin.promoteAdmin')}
                             </button>
                             <button
                                 style={{ ...u.detailActionBtn, ...u.detailDeleteBtn }}
@@ -368,7 +370,7 @@ export default function AdminUsersTab() {
                                 disabled={!!actionLoading}
                             >
                                 <Trash2 size={14} />
-                                Delete User
+                                {t('admin.deleteUser')}
                             </button>
                         </div>
                     </div>
@@ -382,15 +384,15 @@ export default function AdminUsersTab() {
                         <div style={u.modalIcon}>
                             <Trash2 size={22} color="#ef4444" />
                         </div>
-                        <h3 style={u.modalTitle}>Delete User?</h3>
+                        <h3 style={u.modalTitle}>{t('admin.deleteUser')}?</h3>
                         <p style={u.modalBody}>
-                            Are you sure you want to delete{' '}
+                            {t('admin.confirmDeleteUser')}{' '}
                             <strong style={{ color: '#f1f1f8' }}>{confirmDelete.fullName}</strong>?
-                            This action cannot be undone.
+                            {t('group.deleteText')}
                         </p>
                         <div style={u.modalActions}>
                             <button style={u.modalCancel} onClick={() => setConfirmDelete(null)}>
-                                Cancel
+                                {t('common.cancel')}
                             </button>
                             <button
                                 style={u.modalDelete}
@@ -401,7 +403,7 @@ export default function AdminUsersTab() {
                                     ? <div style={u.miniSpinner} />
                                     : <Trash2 size={14} />
                                 }
-                                Delete
+                                {t('common.delete')}
                             </button>
                         </div>
                     </div>

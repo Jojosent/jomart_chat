@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { X, Search, Users, User, Send, Check } from 'lucide-react'
 import { getMyChats, forwardMessage } from '../api/chat'
 import useAuthStore from '../store/authStore'
+import { useTranslation } from 'react-i18next'
 
 export default function ForwardModal({ messageId, onClose, onForwarded }) {
+    const { t } = useTranslation()
     const [chats, setChats] = useState([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
@@ -52,7 +54,7 @@ export default function ForwardModal({ messageId, onClose, onForwarded }) {
         <div style={f.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
             <div style={f.modal}>
                 <div style={f.header}>
-                    <h3 style={f.title}>Forward message</h3>
+                    <h3 style={f.title}>{t('common.forward', 'Forward message')}</h3>
                     <button style={f.closeBtn} onClick={onClose}>
                         <X size={18} />
                     </button>
@@ -62,7 +64,7 @@ export default function ForwardModal({ messageId, onClose, onForwarded }) {
                     <Search size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                     <input
                         style={f.searchInput}
-                        placeholder="Search chats..."
+                        placeholder={t('chat.searchOrFind')}
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         autoFocus
@@ -80,7 +82,7 @@ export default function ForwardModal({ messageId, onClose, onForwarded }) {
                     ) : filteredChats.length === 0 ? (
                         <div style={f.center}>
                             <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-                                No chats found
+                                {t('common.noResults')}
                             </span>
                         </div>
                     ) : (

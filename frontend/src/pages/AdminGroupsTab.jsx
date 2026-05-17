@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../api/auth'
+import { useTranslation } from 'react-i18next'
 import {
     Search, Trash2, X, Users, Crown,
     ChevronDown, ChevronUp, ShieldAlert,
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react'
 
 export default function AdminGroupsTab() {
+    const { t } = useTranslation()
     const [groups, setGroups] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
@@ -26,7 +28,7 @@ export default function AdminGroupsTab() {
         try {
             const res = await api.get('/admin/groups')
             setGroups(res.data)
-        } catch { setError('Failed to load groups') }
+        } catch { setError(t('admin.loadGroupsError', 'Failed to load groups')) }
         finally { setLoading(false) }
     }
 
@@ -37,7 +39,7 @@ export default function AdminGroupsTab() {
             setGroups(prev => prev.filter(g => g.id !== groupId))
             if (selectedGroup?.id === groupId) setSelectedGroup(null)
             setConfirmDelete(null)
-        } catch { setError('Failed to delete group') }
+        } catch { setError(t('admin.deleteGroupError', 'Failed to delete group')) }
         finally { setActionLoading(null) }
     }
 
@@ -81,7 +83,7 @@ export default function AdminGroupsTab() {
     if (loading) return (
         <div style={g.center}>
             <div style={g.spinner} />
-            <span style={g.loadingText}>Loading groups...</span>
+            <span style={g.loadingText}>{t('admin.loadingGroups', 'Loading groups...')}</span>
         </div>
     )
 
@@ -98,7 +100,7 @@ export default function AdminGroupsTab() {
             <div style={g.summaryRow}>
                 <SummaryCard
                     icon={<Users size={16} />}
-                    label="Total Groups"
+                    label={t('admin.totalGroups')}
                     value={groups.length}
                     color="#f59e0b"
                     bg="rgba(245,158,11,0.12)"
@@ -106,7 +108,7 @@ export default function AdminGroupsTab() {
                 />
                 <SummaryCard
                     icon={<UserCheck size={16} />}
-                    label="Total Members"
+                    label={t('admin.totalMembers', 'Total Members')}
                     value={totalMembers}
                     color="#6366f1"
                     bg="rgba(99,102,241,0.12)"
@@ -114,7 +116,7 @@ export default function AdminGroupsTab() {
                 />
                 <SummaryCard
                     icon={<Hash size={16} />}
-                    label="Avg Size"
+                    label={t('admin.avgSize', 'Avg Size')}
                     value={groups.length > 0 ? Math.round(totalMembers / groups.length) : 0}
                     color="#10b981"
                     bg="rgba(16,185,129,0.12)"
@@ -122,7 +124,7 @@ export default function AdminGroupsTab() {
                 />
                 <SummaryCard
                     icon={<Crown size={16} />}
-                    label="Shown"
+                    label={t('admin.shown', 'Shown')}
                     value={filtered.length}
                     color="#ec4899"
                     bg="rgba(236,72,153,0.12)"
@@ -138,7 +140,7 @@ export default function AdminGroupsTab() {
                         style={g.searchInput}
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        placeholder="Search by name, admin or description..."
+                        placeholder={t('chat.searchPlaceholder')}
                     />
                     {search && (
                         <button style={g.clearBtn} onClick={() => setSearch('')}>
@@ -152,14 +154,14 @@ export default function AdminGroupsTab() {
                     value={filterSize}
                     onChange={e => setFilterSize(e.target.value)}
                 >
-                    <option value="ALL">All Sizes</option>
-                    <option value="SMALL">Small (≤5)</option>
-                    <option value="MEDIUM">Medium (6–20)</option>
-                    <option value="LARGE">Large (20+)</option>
+                    <option value="ALL">{t('admin.allSizes', 'All Sizes')}</option>
+                    <option value="SMALL">{t('admin.smallSize', 'Small (≤5)')}</option>
+                    <option value="MEDIUM">{t('admin.mediumSize', 'Medium (6–20)')}</option>
+                    <option value="LARGE">{t('admin.largeSize', 'Large (20+)')}</option>
                 </select>
 
                 <div style={g.countBadge}>
-                    {filtered.length} / {groups.length} groups
+                    {filtered.length} / {groups.length} {t('admin.groups').toLowerCase()}
                 </div>
             </div>
 
@@ -171,12 +173,12 @@ export default function AdminGroupsTab() {
                         <thead>
                             <tr>
                                 {[
-                                    { col: 'name', label: 'Group' },
-                                    { col: null, label: 'Admin' },
-                                    { col: 'memberCount', label: 'Members' },
-                                    { col: 'description', label: 'Description' },
-                                    { col: 'createdAt', label: 'Created' },
-                                    { col: null, label: 'Actions' },
+                                    { col: 'name', label: t('group.name') },
+                                    { col: null, label: t('group.admin') },
+                                    { col: 'memberCount', label: t('group.members') },
+                                    { col: 'description', label: t('group.description') },
+                                    { col: 'createdAt', label: t('admin.created', 'Created') },
+                                    { col: null, label: t('common.actions', 'Actions') },
                                 ].map(({ col, label }) => (
                                     <th
                                         key={label}
@@ -196,7 +198,7 @@ export default function AdminGroupsTab() {
                                 <tr>
                                     <td colSpan={6} style={g.emptyCell}>
                                         <Users size={20} style={{ opacity: 0.3 }} />
-                                        <span>No groups found</span>
+                                        <span>{t('chat.notFound')}</span>
                                     </td>
                                 </tr>
                             ) : filtered.map(group => {
@@ -296,7 +298,7 @@ export default function AdminGroupsTab() {
                 {selectedGroup && (
                     <div style={g.detailPanel}>
                         <div style={g.detailHeader}>
-                            <span style={g.detailTitle}>Group Details</span>
+                            <span style={g.detailTitle}>{t('admin.groupDetails')}</span>
                             <button style={g.detailClose} onClick={() => setSelectedGroup(null)}>
                                 <X size={14} />
                             </button>
@@ -319,7 +321,7 @@ export default function AdminGroupsTab() {
                         {/* Member count big */}
                         <div style={g.detailMemberCount}>
                             <span style={g.detailMemberNum}>{selectedGroup.memberCount ?? 0}</span>
-                            <span style={g.detailMemberLabel}>members</span>
+                            <span style={g.detailMemberLabel}>{t('group.memberCount')}</span>
                         </div>
 
                         {/* Size bar */}
@@ -331,29 +333,29 @@ export default function AdminGroupsTab() {
                                 }} />
                             </div>
                             <span style={g.sizeLabel}>
-                                {(selectedGroup.memberCount ?? 0) <= 5 ? 'Small group'
-                                    : (selectedGroup.memberCount ?? 0) <= 20 ? 'Medium group'
-                                        : 'Large group'}
+                                {(selectedGroup.memberCount ?? 0) <= 5 ? t('admin.smallGroup', 'Small group')
+                                    : (selectedGroup.memberCount ?? 0) <= 20 ? t('admin.mediumGroup', 'Medium group')
+                                        : t('admin.largeGroup', 'Large group')}
                             </span>
                         </div>
 
                         <div style={g.detailFields}>
                             <DetailField
                                 icon={<Crown size={13} />}
-                                label="Admin"
+                                label={t('group.admin')}
                                 value={selectedGroup.admin?.fullName || '—'}
                                 valueColor="#f59e0b"
                             />
                             <DetailField
                                 icon={<FileText size={13} />}
-                                label="Description"
-                                value={selectedGroup.description || 'No description'}
+                                label={t('group.description')}
+                                value={selectedGroup.description || t('group.noDescription')}
                             />
                             <DetailField
                                 icon={<Calendar size={13} />}
-                                label="Created"
+                                label={t('admin.created', 'Created')}
                                 value={selectedGroup.createdAt
-                                    ? new Date(selectedGroup.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                                    ? new Date(selectedGroup.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
                                     : '—'}
                             />
                         </div>
@@ -364,7 +366,7 @@ export default function AdminGroupsTab() {
                             disabled={!!actionLoading}
                         >
                             <Trash2 size={14} />
-                            Delete Group
+                            {t('admin.deleteGroup')}
                         </button>
                     </div>
                 )}
@@ -377,15 +379,15 @@ export default function AdminGroupsTab() {
                         <div style={g.modalIcon}>
                             <Trash2 size={22} color="#ef4444" />
                         </div>
-                        <h3 style={g.modalTitle}>Delete Group?</h3>
+                        <h3 style={g.modalTitle}>{t('admin.deleteGroup')}?</h3>
                         <p style={g.modalBody}>
-                            Are you sure you want to delete{' '}
+                            {t('admin.confirmDeleteGroup')}{' '}
                             <strong style={{ color: '#f1f1f8' }}>{confirmDelete.name}</strong>?
-                            All messages and data will be permanently removed.
+                            {t('group.deleteText')}
                         </p>
                         <div style={g.modalActions}>
                             <button style={g.modalCancel} onClick={() => setConfirmDelete(null)}>
-                                Cancel
+                                {t('common.cancel')}
                             </button>
                             <button
                                 style={g.modalDelete}
@@ -396,7 +398,7 @@ export default function AdminGroupsTab() {
                                     ? <div style={g.miniSpinner} />
                                     : <Trash2 size={14} />
                                 }
-                                Delete
+                                {t('common.delete')}
                             </button>
                         </div>
                     </div>

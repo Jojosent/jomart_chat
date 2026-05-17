@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { translateText } from '../api/translate'
 import { Globe, X, RotateCcw, Loader } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const LANGS = {
     ru: { label: 'RU', full: 'Russian' },
@@ -9,6 +10,7 @@ const LANGS = {
 }
 
 export default function TranslateButton({ text, isMine }) {
+    const { t } = useTranslation()
     const [step, setStep] = useState('idle') // idle | pick | loading | done | error
     const [translated, setTranslated] = useState('')
     const [detectedLang, setDetectedLang] = useState('')
@@ -24,7 +26,7 @@ export default function TranslateButton({ text, isMine }) {
             setTargetLang(lang)
             setStep('done')
         } catch (err) {
-            setErrorMsg(err.response?.data?.message || 'Error')
+            setErrorMsg(err.response?.data?.message || t('common.error'))
             setStep('error')
         }
     }
@@ -41,7 +43,7 @@ export default function TranslateButton({ text, isMine }) {
             onClick={() => setStep('pick')}
         >
             <Globe size={11} />
-            Translate
+            {t('translate.btn')}
         </button>
     )
 
@@ -67,7 +69,7 @@ export default function TranslateButton({ text, isMine }) {
     if (step === 'loading') return (
         <div style={{ ...s.btn, color: textColor, cursor: 'default' }}>
             <Loader size={11} style={{ animation: 'spin 0.8s linear infinite' }} />
-            Translating...
+            {t('translate.translating')}
         </div>
     )
 
@@ -95,7 +97,7 @@ export default function TranslateButton({ text, isMine }) {
                     <button
                         style={{ ...s.iconBtn, color: textColor }}
                         onClick={() => setStep('pick')}
-                        title="Change language"
+                        title={t('lang.select')}
                     >
                         <RotateCcw size={11} />
                     </button>

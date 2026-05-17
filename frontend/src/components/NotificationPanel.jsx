@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { getNotifications, markAsRead, markAllAsRead } from '../api/notifications'
 import { acceptInvite, declineInvite } from '../api/group'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Bell, MessageSquare, Users, DoorOpen, Crown, CheckCheck, X, Check, X as XIcon } from 'lucide-react'
 
 export function NotificationPanel({ onClose, onCountChange }) {
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const [notifications, setNotifications] = useState([])
     const [loading, setLoading] = useState(true)
@@ -90,11 +92,11 @@ export function NotificationPanel({ onClose, onCountChange }) {
     const timeAgo = (d) => {
         const diff = Date.now() - new Date(d).getTime()
         const m = Math.floor(diff / 60000)
-        if (m < 1) return 'Just now'
-        if (m < 60) return `${m}m ago`
+        if (m < 1) return t('notifications.justNow')
+        if (m < 60) return `${m}${t('notifications.minutesAgo')}`
         const h = Math.floor(m / 60)
-        if (h < 24) return `${h}h ago`
-        return `${Math.floor(h / 24)}d ago`
+        if (h < 24) return `${h}${t('notifications.hoursAgo')}`
+        return `${Math.floor(h / 24)}${t('notifications.daysAgo')}`
     }
 
     const unread = notifications.filter(n => !n.read)
@@ -109,7 +111,7 @@ export function NotificationPanel({ onClose, onCountChange }) {
                 {/* Header */}
                 <div style={np.header}>
                     <div style={np.headerLeft}>
-                        <span style={np.title}>Notifications</span>
+                        <span style={np.title}>{t('notifications.title')}</span>
                         {unread.length > 0 && (
                             <span style={np.badge}>{unread.length}</span>
                         )}
@@ -118,7 +120,7 @@ export function NotificationPanel({ onClose, onCountChange }) {
                         {unread.length > 0 && (
                             <button style={np.readAllBtn} onClick={handleReadAll}>
                                 <CheckCheck size={13} />
-                                Mark all read
+                                {t('notifications.readAll')}
                             </button>
                         )}
                         <button style={np.closeBtn} onClick={onClose}>
@@ -138,8 +140,8 @@ export function NotificationPanel({ onClose, onCountChange }) {
                             <div style={np.emptyIconWrap}>
                                 <Bell size={20} color="var(--text-muted)" />
                             </div>
-                            <p style={np.emptyTitle}>No notifications</p>
-                            <p style={np.emptyHint}>You're all caught up</p>
+                            <p style={np.emptyTitle}>{t('notifications.empty')}</p>
+                            <p style={np.emptyHint}>{t('notifications.allCaughtUp')}</p>
                         </div>
                     ) : (
                         notifications.map(n => {
@@ -175,10 +177,10 @@ export function NotificationPanel({ onClose, onCountChange }) {
                                         {n.type === 'GROUP_INVITE' && n.status === 'PENDING' && (
                                             <div style={np.actions}>
                                                 <button style={np.acceptBtn} onClick={(e) => handleAccept(e, n)}>
-                                                    <Check size={12} /> Accept
+                                                    <Check size={12} /> {t('notifications.accept')}
                                                 </button>
                                                 <button style={np.declineBtn} onClick={(e) => handleDecline(e, n)}>
-                                                    <XIcon size={12} /> Decline
+                                                    <XIcon size={12} /> {t('notifications.decline')}
                                                 </button>
                                             </div>
                                         )}
@@ -187,7 +189,7 @@ export function NotificationPanel({ onClose, onCountChange }) {
                                                 ...np.statusLabel,
                                                 color: n.status === 'ACCEPTED' ? '#10b981' : '#ef4444'
                                             }}>
-                                                {n.status === 'ACCEPTED' ? 'Accepted' : 'Declined'}
+                                                {n.status === 'ACCEPTED' ? t('notifications.accepted') : t('notifications.declined')}
                                             </span>
                                         )}
 

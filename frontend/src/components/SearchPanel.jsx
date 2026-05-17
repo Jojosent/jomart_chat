@@ -2,8 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import { searchUsers } from '../api/user'
 import { getOrCreatePrivate } from '../api/chat'
 import { Search, MessageSquare, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export function SearchPanel({ onChatOpen, onClose }) {
+    const { t } = useTranslation()
     const [query, setQuery] = useState('')
     const [results, setResults] = useState([])
     const [loading, setLoading] = useState(false)
@@ -41,7 +43,7 @@ export function SearchPanel({ onChatOpen, onClose }) {
                     style={sp.input}
                     value={query}
                     onChange={e => setQuery(e.target.value)}
-                    placeholder="Search by name or @username..."
+                    placeholder={t('chat.searchPlaceholder')}
                 />
                 {query && (
                     <button style={sp.clearBtn} onClick={() => setQuery('')}>
@@ -55,7 +57,7 @@ export function SearchPanel({ onChatOpen, onClose }) {
                 {loading && (
                     <div style={sp.state}>
                         <div style={sp.spinner} />
-                        <span style={sp.stateText}>Searching...</span>
+                        <span style={sp.stateText}>{t('common.searching')}</span>
                     </div>
                 )}
                 {!loading && query.length === 0 && (
@@ -63,8 +65,8 @@ export function SearchPanel({ onChatOpen, onClose }) {
                         <div style={sp.stateIconWrap}>
                             <Search size={18} color="var(--text-muted)" />
                         </div>
-                        <p style={sp.stateTitle}>Find people</p>
-                        <p style={sp.stateHint}>Enter at least 2 characters</p>
+                        <p style={sp.stateTitle}>{t('chat.findPeople')}</p>
+                        <p style={sp.stateHint}>{t('chat.minChars')}</p>
                     </div>
                 )}
                 {!loading && query.length >= 2 && results.length === 0 && (
@@ -72,8 +74,8 @@ export function SearchPanel({ onChatOpen, onClose }) {
                         <div style={sp.stateIconWrap}>
                             <Search size={18} color="var(--text-muted)" />
                         </div>
-                        <p style={sp.stateTitle}>No results</p>
-                        <p style={sp.stateHint}>Try a different name or username</p>
+                        <p style={sp.stateTitle}>{t('common.noResults')}</p>
+                        <p style={sp.stateHint}>{t('common.tryDifferent')}</p>
                     </div>
                 )}
 
@@ -102,7 +104,7 @@ export function SearchPanel({ onChatOpen, onClose }) {
                         {/* Message btn */}
                         <button style={sp.msgBtn} onClick={() => handleOpenChat(user)}>
                             <MessageSquare size={14} />
-                            Message
+                            {t('chat.sendMessage')}
                         </button>
                     </div>
                 ))}

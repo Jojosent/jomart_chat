@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { sendPhoneOtp, verifyPhoneOtp } from '../api/phone'
 import useAuthStore from '../store/authStore'
+import { useTranslation } from 'react-i18next'
 
 export default function PhoneVerification({ currentPhone, isVerified, onUpdate }) {
+    const { t } = useTranslation()
     const updateUser = useAuthStore((s) => s.updateUser)
 
     const [step, setStep] = useState('input')  // 'input' | 'otp'
@@ -15,14 +17,14 @@ export default function PhoneVerification({ currentPhone, isVerified, onUpdate }
 
     // Шаг 1 — отправить OTP
     const handleSendOtp = async () => {
-        if (!phone.trim()) { setError('Enter phone number'); return }
+        if (!phone.trim()) { setError(t('profile.phoneError', 'Enter phone number')); return }
         setLoading(true); setError('')
         try {
             await sendPhoneOtp(phone)
             setStep('otp')
             startCountdown()
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to send OTP')
+            setError(err.response?.data?.message || t('common.error'))
         } finally {
             setLoading(false)
         }
@@ -30,16 +32,16 @@ export default function PhoneVerification({ currentPhone, isVerified, onUpdate }
 
     // Шаг 2 — подтвердить OTP
     const handleVerify = async () => {
-        if (!otp.trim()) { setError('Enter OTP code'); return }
+        if (!otp.trim()) { setError(t('auth.otpError', 'Enter OTP code')); return }
         setLoading(true); setError('')
         try {
             const res = await verifyPhoneOtp(phone, otp)
             updateUser(res.data)
-            setSuccess('Phone verified successfully!')
+            setSuccess(t('profile.phoneVerifiedSuccess', 'Phone verified successfully!'))
             setStep('input')
             if (onUpdate) onUpdate(res.data)
         } catch (err) {
-            setError(err.response?.data?.message || 'Invalid OTP code')
+            setError(err.response?.data?.message || t('auth.invalidOtp', 'Invalid OTP code'))
         } finally {
             setLoading(false)
         }
@@ -51,10 +53,10 @@ export default function PhoneVerification({ currentPhone, isVerified, onUpdate }
         try {
             await sendPhoneOtp(phone)
             startCountdown()
-            setSuccess('OTP resent!')
+            setSuccess(t('auth.otpResent', 'OTP resent!'))
             setTimeout(() => setSuccess(''), 3000)
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to resend')
+            setError(err.response?.data?.message || t('common.error'))
         } finally {
             setLoading(false)
         }
@@ -76,14 +78,14 @@ export default function PhoneVerification({ currentPhone, isVerified, onUpdate }
             <div style={styles.verifiedBox}>
                 <span style={styles.verifiedIcon}>✓</span>
                 <div>
-                    <div style={styles.verifiedTitle}>Телефон подтверждён</div>
+                    <div style={styles.verifiedTitle}>{t('profile.phoneVerified')}</div>
                     <div style={styles.verifiedPhone}>{currentPhone}</div>
                 </div>
                 <button style={styles.changeBtn} onClick={() => {
                     // сбрасываем чтобы поменять номер
                     setStep('input')
                 }}>
-                    Изменить
+                    {t('profile.edit')}
                 </button>
             </div>
         )
@@ -91,7 +93,7 @@ export default function PhoneVerification({ currentPhone, isVerified, onUpdate }
 
     return (
         <div style={styles.container}>
-            <div style={styles.title}>📱 Подтвердить номер телефона</div>
+            <div style={styles.title}>📱 {t('profile.phoneVerified')}</div>
 
             {error && <div style={styles.error}>{error}</div>}
             {success && <div style={styles.success}>{success}</div>}
@@ -102,7 +104,7 @@ export default function PhoneVerification({ currentPhone, isVerified, onUpdate }
                         style={styles.input}
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+77001234567"
+                        placeholder={t('profile.phonePlaceholder')}
                         type="tel"
                     />
                     <button
@@ -110,20 +112,20 @@ export default function PhoneVerification({ currentPhone, isVerified, onUpdate }
                         onClick={handleSendOtp}
                         disabled={loading}
                     >
-                        {loading ? '...' : 'Отправить код'}
+                        {loading ? '...' : t('auth.otpResend')}
                     </button>
                 </div>
             ) : (
                 <div style={styles.otpSection}>
                     <p style={styles.hint}>
-                        Код отправлен на <strong style={{ color: '#7c6af7' }}>{phone}</strong>
+                        {t('auth.otpSent')} <strong style={{ color: '#7c6af7' }}>{phone}</strong>
                     </p>
                     <div style={styles.row}>
                         <input
                             style={{ ...styles.input, ...styles.otpInput }}
                             value={otp}
                             onChange={(e) => setOtp(e.target.value)}
-                            placeholder="000000"
+                            placeholder={t('auth.otpPlaceholder')}
                             maxLength={6}
                             type="text"
                         />
@@ -132,7 +134,7 @@ export default function PhoneVerification({ currentPhone, isVerified, onUpdate }
                             onClick={handleVerify}
                             disabled={loading}
                         >
-                            {loading ? '...' : 'Подтвердить'}
+                            {loading ? '...' : t('auth.otpConfirm')}
                         </button>
                     </div>
 
@@ -141,15 +143,15 @@ export default function PhoneVerification({ currentPhone, isVerified, onUpdate }
                             style={styles.backBtn}
                             onClick={() => { setStep('input'); setOtp(''); setError('') }}
                         >
-                            ← Изменить номер
+                            ← {t('auth.changeEmail')}
                         </button>
                         {countdown > 0 ? (
                             <span style={styles.countdownText}>
-                                Повторно через {countdown}с
+                                {t('auth.otpResendIn')} {countdown}с
                             </span>
                         ) : (
                             <button style={styles.resendBtn} onClick={handleResend}>
-                                Отправить снова
+                                {t('auth.otpResend')}
                             </button>
                         )}
                     </div>

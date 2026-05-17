@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { createGroup } from '../api/group'
 import { searchUsers } from '../api/user'
 import { X, Users, Search, Check, ArrowRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 
 export default function CreateGroupModal({ onClose, onCreate }) {
+    const { t } = useTranslation()
     const [step, setStep] = useState('info')  // 'info' | 'members'
     const [name, setName] = useState('')
     const [description, setDesc] = useState('')
@@ -34,7 +36,7 @@ export default function CreateGroupModal({ onClose, onCreate }) {
     }
 
     const handleCreate = async () => {
-        if (!name.trim()) { setError('Enter group name'); return }
+        if (!name.trim()) { setError(t('group.nameError', 'Enter group name')); return }
         setLoading(true); setError('')
         try {
             const res = await createGroup({
@@ -45,7 +47,7 @@ export default function CreateGroupModal({ onClose, onCreate }) {
             onCreate(res.data)
             onClose()
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to create group')
+            setError(err.response?.data?.message || t('common.error'))
         } finally {
             setLoading(false)
         }
@@ -58,7 +60,7 @@ export default function CreateGroupModal({ onClose, onCreate }) {
                 {/* Хедер */}
                 <div style={styles.header}>
                     <span style={styles.title}>
-                        {step === 'info' ? '👥 Новая группа' : '➕ Добавить участников'}
+                        {step === 'info' ? `👥 ${t('group.new')}` : `➕ ${t('group.addMembers')}`}
                     </span>
                     <button style={styles.closeBtn} onClick={onClose}><X size={14} /></button>
                 </div>
@@ -69,24 +71,24 @@ export default function CreateGroupModal({ onClose, onCreate }) {
                 {step === 'info' && (
                     <div style={styles.body}>
                         <div style={styles.field}>
-                            <label style={styles.label}>Название группы *</label>
+                            <label style={styles.label}>{t('group.name')} *</label>
                             <input
                                 style={styles.input}
                                 value={name}
                                 onChange={e => setName(e.target.value)}
-                                placeholder="Например: Наша команда"
+                                placeholder={t('group.namePlaceholder')}
                                 maxLength={50}
                             />
                             <span style={styles.counter}>{name.length}/50</span>
                         </div>
 
                         <div style={styles.field}>
-                            <label style={styles.label}>Описание</label>
+                            <label style={styles.label}>{t('group.description')}</label>
                             <textarea
                                 style={styles.textarea}
                                 value={description}
                                 onChange={e => setDesc(e.target.value)}
-                                placeholder="О чём эта группа?"
+                                placeholder={t('group.descPlaceholder')}
                                 maxLength={200}
                                 rows={3}
                             />
@@ -97,7 +99,7 @@ export default function CreateGroupModal({ onClose, onCreate }) {
                             style={{ ...styles.btn, opacity: name.trim() ? 1 : 0.5 }}
                             onClick={() => name.trim() && setStep('members')}
                         >
-                            Далее →
+                            {t('group.next')}
                         </button>
                     </div>
                 )}
@@ -125,7 +127,7 @@ export default function CreateGroupModal({ onClose, onCreate }) {
                             style={styles.input}
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            placeholder="Найти пользователя..."
+                            placeholder={t('chat.searchPlaceholder')}
                         />
 
                         {/* Результаты */}
@@ -159,20 +161,20 @@ export default function CreateGroupModal({ onClose, onCreate }) {
                                 )
                             })}
                             {search.length >= 2 && results.length === 0 && (
-                                <div style={styles.noResults}>Пользователи не найдены</div>
+                                <div style={styles.noResults}>{t('chat.notFound')}</div>
                             )}
                         </div>
 
                         <div style={styles.footer}>
                             <button style={styles.backBtn} onClick={() => setStep('info')}>
-                                ← Назад
+                                ← {t('common.back')}
                             </button>
                             <button
                                 style={styles.btn}
                                 onClick={handleCreate}
                                 disabled={loading}
                             >
-                                {loading ? 'Создание...' : `✓ Создать (${selected.length} уч.)`}
+                                {loading ? t('group.creating') : `✓ ${t('group.create')} (${selected.length} ${t('group.memberCount')})`}
                             </button>
                         </div>
                     </div>

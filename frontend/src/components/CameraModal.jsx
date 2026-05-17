@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { X, Camera, RefreshCw, Check, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export default function CameraModal({ onClose, onCapture }) {
+    const { t } = useTranslation()
     const videoRef = useRef(null)
     const canvasRef = useRef(null)
     const [stream, setStream] = useState(null)
@@ -32,7 +34,7 @@ export default function CameraModal({ onClose, onCapture }) {
             setLoading(false)
         } catch (err) {
             console.error('Camera error:', err)
-            setError('Could not access camera. Please check permissions.')
+            setError(t('camera.error', 'Could not access camera. Please check permissions.'))
             setLoading(false)
         }
     }
@@ -71,7 +73,7 @@ export default function CameraModal({ onClose, onCapture }) {
         <div style={c.overlay}>
             <div style={c.modal}>
                 <div style={c.header}>
-                    <h3 style={f.title}>Camera</h3>
+                    <h3 style={f.title}>{t('camera.title', 'Camera')}</h3>
                     <button style={f.closeBtn} onClick={onClose}>
                         <X size={20} />
                     </button>
@@ -80,7 +82,7 @@ export default function CameraModal({ onClose, onCapture }) {
                 <div style={c.content}>
                     {!capturedImage ? (
                         <div style={c.previewWrap}>
-                            {loading && <div style={c.status}>Starting camera...</div>}
+                            {loading && <div style={c.status}>{t('camera.starting', 'Starting camera...')}</div>}
                             {error && <div style={c.status}>{error}</div>}
                             <video
                                 ref={videoRef}
@@ -100,11 +102,11 @@ export default function CameraModal({ onClose, onCapture }) {
                             <div style={c.actions}>
                                 <button style={c.actionBtn} onClick={retake}>
                                     <Trash2 size={20} />
-                                    <span>Retake</span>
+                                    <span>{t('camera.retake', 'Retake')}</span>
                                 </button>
                                 <button style={{ ...c.actionBtn, background: 'var(--accent)', color: '#fff' }} onClick={confirm}>
                                     <Check size={20} />
-                                    <span>Send</span>
+                                    <span>{t('chat.send')}</span>
                                 </button>
                             </div>
                         </div>

@@ -1,7 +1,9 @@
 import useThemeStore from '../store/themeStore'
 import { Moon, Sun } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export function ThemeToggle() {
+    const { t } = useTranslation()
     const { theme, toggleTheme } = useThemeStore()
     const isDark = theme === 'dark'
 
@@ -13,7 +15,7 @@ export function ThemeToggle() {
                 borderColor: 'var(--border)',
             }}
             onClick={toggleTheme}
-            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={isDark ? t('theme.light', 'Switch to light mode') : t('theme.dark', 'Switch to dark mode')}
         >
             {isDark
                 ? <Moon size={15} color="var(--accent-light)" />

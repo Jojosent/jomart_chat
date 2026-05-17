@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../api/auth'
+import { useTranslation } from 'react-i18next'
 import {
     Search, Trash2, X, MessageSquare, Image, FileText, Film,
     ChevronDown, ChevronUp, ShieldAlert, Eye, Filter,
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react'
 
 export default function AdminMessagesTab() {
+    const { t } = useTranslation()
     const [chats, setChats] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
@@ -41,7 +43,7 @@ export default function AdminMessagesTab() {
                 totalMessages: allChats.reduce((acc, c) => acc + (c.messageCount || 0), 0),
             })
         } catch (err) {
-            setError('Failed to load chats. Make sure the /admin/chats endpoint exists.')
+            setError(t('admin.loadChatsError', 'Failed to load chats. Make sure the /admin/chats endpoint exists.'))
         } finally {
             setLoading(false)
         }
@@ -75,11 +77,11 @@ export default function AdminMessagesTab() {
         try {
             await api.delete(`/admin/messages/${messageId}`)
             setChatMessages(prev => prev.map(m =>
-                m.id === messageId ? { ...m, deleted: true, content: 'Message deleted' } : m
+                m.id === messageId ? { ...m, deleted: true, content: t('chat.deleted') } : m
             ))
             setConfirmDelete(null)
         } catch {
-            setError('Failed to delete message')
+            setError(t('admin.deleteMessageError', 'Failed to delete message'))
         } finally {
             setActionLoading(null)
         }
@@ -135,7 +137,7 @@ export default function AdminMessagesTab() {
     if (loading) return (
         <div style={m.center}>
             <div style={m.spinner} />
-            <span style={m.loadingText}>Loading chats...</span>
+            <span style={m.loadingText}>{t('admin.loadingChats', 'Loading chats...')}</span>
         </div>
     )
 
@@ -151,10 +153,10 @@ export default function AdminMessagesTab() {
             {/* Summary cards */}
             {stats && (
                 <div style={m.summaryRow}>
-                    <StatCard icon={<MessageSquare size={16} />} label="Total Chats" value={stats.totalChats} color="#10b981" bg="rgba(16,185,129,0.12)" border="rgba(16,185,129,0.25)" />
-                    <StatCard icon={<UserIcon size={16} />} label="Private Chats" value={stats.privateChats} color="#6366f1" bg="rgba(99,102,241,0.12)" border="rgba(99,102,241,0.25)" />
-                    <StatCard icon={<Users size={16} />} label="Group Chats" value={stats.groupChats} color="#f59e0b" bg="rgba(245,158,11,0.12)" border="rgba(245,158,11,0.25)" />
-                    <StatCard icon={<Hash size={16} />} label="Total Messages" value={stats.totalMessages} color="#ec4899" bg="rgba(236,72,153,0.12)" border="rgba(236,72,153,0.25)" />
+                    <StatCard icon={<MessageSquare size={16} />} label={t('admin.totalChats', 'Total Chats')} value={stats.totalChats} color="#10b981" bg="rgba(16,185,129,0.12)" border="rgba(16,185,129,0.25)" />
+                    <StatCard icon={<UserIcon size={16} />} label={t('admin.privateChats', 'Private Chats')} value={stats.privateChats} color="#6366f1" bg="rgba(99,102,241,0.12)" border="rgba(99,102,241,0.25)" />
+                    <StatCard icon={<Users size={16} />} label={t('admin.groupChats', 'Group Chats')} value={stats.groupChats} color="#f59e0b" bg="rgba(245,158,11,0.12)" border="rgba(245,158,11,0.25)" />
+                    <StatCard icon={<Hash size={16} />} label={t('admin.totalMessages')} value={stats.totalMessages} color="#ec4899" bg="rgba(236,72,153,0.12)" border="rgba(236,72,153,0.25)" />
                 </div>
             )}
 
@@ -166,18 +168,18 @@ export default function AdminMessagesTab() {
                         style={m.searchInput}
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        placeholder="Search chats by name or member..."
+                        placeholder={t('chat.searchPlaceholder')}
                     />
                     {search && <button style={m.clearBtn} onClick={() => setSearch('')}><X size={12} /></button>}
                 </div>
 
                 <select style={m.select} value={filterType} onChange={e => setFilterType(e.target.value)}>
-                    <option value="ALL">All Types</option>
-                    <option value="PRIVATE">Private</option>
-                    <option value="GROUP">Group</option>
+                    <option value="ALL">{t('admin.allTypes', 'All Types')}</option>
+                    <option value="PRIVATE">{t('admin.privateType', 'Private')}</option>
+                    <option value="GROUP">{t('admin.groupType', 'Group')}</option>
                 </select>
 
-                <div style={m.countBadge}>{filtered.length} / {chats.length} chats</div>
+                <div style={m.countBadge}>{filtered.length} / {chats.length} {t('admin.chats', 'chats')}</div>
             </div>
 
             {/* Table + Message panel */}
@@ -188,12 +190,12 @@ export default function AdminMessagesTab() {
                         <thead>
                             <tr>
                                 {[
-                                    { col: 'type', label: 'Type' },
-                                    { col: 'name', label: 'Chat' },
-                                    { col: null, label: 'Members' },
-                                    { col: 'messageCount', label: 'Messages' },
-                                    { col: 'createdAt', label: 'Created' },
-                                    { col: null, label: 'Actions' },
+                                    { col: 'type', label: t('common.type', 'Type') },
+                                    { col: 'name', label: t('chat.title') },
+                                    { col: null, label: t('group.members') },
+                                    { col: 'messageCount', label: t('admin.messages') },
+                                    { col: 'createdAt', label: t('admin.created', 'Created') },
+                                    { col: null, label: t('common.actions', 'Actions') },
                                 ].map(({ col, label }) => (
                                     <th
                                         key={label}
@@ -213,7 +215,7 @@ export default function AdminMessagesTab() {
                                 <tr>
                                     <td colSpan={6} style={m.emptyCell}>
                                         <MessageSquare size={20} style={{ opacity: 0.3 }} />
-                                        <span>No chats found</span>
+                                        <span>{t('chat.notFound')}</span>
                                     </td>
                                 </tr>
                             ) : filtered.map(chat => {
@@ -241,7 +243,7 @@ export default function AdminMessagesTab() {
                                                 border: `1px solid ${isGroup ? 'rgba(245,158,11,0.25)' : 'rgba(99,102,241,0.25)'}`,
                                             }}>
                                                 {isGroup ? <Users size={10} /> : <UserIcon size={10} />}
-                                                {isGroup ? 'Group' : 'Private'}
+                                                {isGroup ? t('admin.groupType', 'Group') : t('admin.privateType', 'Private')}
                                             </span>
                                         </td>
                                         {/* Chat name */}
@@ -291,7 +293,7 @@ export default function AdminMessagesTab() {
                                             <button
                                                 style={m.viewBtn}
                                                 onClick={() => handleSelectChat(chat)}
-                                                title="View messages"
+                                                title={t('admin.viewMessages')}
                                             >
                                                 <Eye size={13} />
                                             </button>
@@ -312,7 +314,7 @@ export default function AdminMessagesTab() {
                                     {selectedChat.name || selectedChat.members?.map(u => u.fullName).join(' & ') || `Chat #${selectedChat.id}`}
                                 </div>
                                 <div style={m.msgPanelSub}>
-                                    {chatMessages.length} messages
+                                    {chatMessages.length} {t('admin.messages').toLowerCase()}
                                 </div>
                             </div>
                             <button style={m.msgPanelClose} onClick={() => { setSelectedChat(null); setChatMessages([]) }}>
@@ -328,7 +330,7 @@ export default function AdminMessagesTab() {
                             ) : chatMessages.length === 0 ? (
                                 <div style={m.msgCenter}>
                                     <MessageSquare size={20} style={{ opacity: 0.2 }} />
-                                    <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12, marginTop: 8 }}>No messages</span>
+                                    <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12, marginTop: 8 }}>{t('admin.noMessages')}</span>
                                 </div>
                             ) : (
                                 chatMessages.map(msg => (
@@ -359,7 +361,7 @@ export default function AdminMessagesTab() {
                                                     </span>
                                                 )}
                                                 {msg.deleted
-                                                    ? <span style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.3)' }}>Deleted</span>
+                                                    ? <span style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.3)' }}>{t('chat.deleted')}</span>
                                                     : <span style={{ color: 'rgba(255,255,255,0.7)', wordBreak: 'break-word' }}>{msg.content}</span>
                                                 }
                                             </div>
@@ -368,7 +370,7 @@ export default function AdminMessagesTab() {
                                             <button
                                                 style={m.msgDeleteBtn}
                                                 onClick={() => setConfirmDelete(msg)}
-                                                title="Delete message"
+                                                title={t('admin.deleteMessage')}
                                             >
                                                 <Trash2 size={12} />
                                             </button>
@@ -388,19 +390,19 @@ export default function AdminMessagesTab() {
                         <div style={m.modalIcon}>
                             <Trash2 size={22} color="#ef4444" />
                         </div>
-                        <h3 style={m.modalTitle}>Delete Message?</h3>
+                        <h3 style={m.modalTitle}>{t('admin.deleteMessage')}?</h3>
                         <p style={m.modalBody}>
-                            Message from <strong style={{ color: '#f1f1f8' }}>{confirmDelete.senderName}</strong> will be permanently deleted.
+                            {t('admin.confirmDeleteMessage')} ({confirmDelete.senderName})
                         </p>
                         <div style={m.modalActions}>
-                            <button style={m.modalCancel} onClick={() => setConfirmDelete(null)}>Cancel</button>
+                            <button style={m.modalCancel} onClick={() => setConfirmDelete(null)}>{t('common.cancel')}</button>
                             <button
                                 style={m.modalDelete}
                                 onClick={() => handleDeleteMessage(confirmDelete.id)}
                                 disabled={!!actionLoading}
                             >
                                 {actionLoading ? <div style={m.miniSpinner} /> : <Trash2 size={14} />}
-                                Delete
+                                {t('common.delete')}
                             </button>
                         </div>
                     </div>
@@ -412,14 +414,15 @@ export default function AdminMessagesTab() {
 
 // ── Endpoint missing state ───────────────────────────────────
 function EndpointMissingState({ onRefresh, error }) {
+    const { t } = useTranslation()
     return (
         <div style={m.endpointMissing}>
             <div style={m.endpointIcon}>
                 <AlertTriangle size={32} color="#f59e0b" />
             </div>
-            <h3 style={m.endpointTitle}>Backend Endpoint Required</h3>
+            <h3 style={m.endpointTitle}>{t('admin.endpointRequired', 'Backend Endpoint Required')}</h3>
             <p style={m.endpointDesc}>
-                This tab needs additional backend endpoints to work. Add these to your <code style={m.code}>AdminController.java</code>:
+                {t('admin.endpointDesc', 'This tab needs additional backend endpoints to work. Add these to your')} <code style={m.code}>AdminController.java</code>:
             </p>
             <div style={m.codeBlock}>
                 <pre style={m.pre}>{`// GET /api/admin/chats — all chats with stats
@@ -444,7 +447,7 @@ public ResponseEntity<?> deleteMessage(@PathVariable Long id) {
 }`}</pre>
             </div>
             <button style={m.retryBtn} onClick={onRefresh}>
-                <RefreshCw size={14} /> Retry after adding endpoints
+                <RefreshCw size={14} /> {t('admin.retryAfterAdding', 'Retry after adding endpoints')}
             </button>
             <p style={m.endpointNote}>Error: {error}</p>
         </div>
