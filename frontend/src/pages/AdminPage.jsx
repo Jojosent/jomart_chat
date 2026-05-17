@@ -10,9 +10,9 @@ import {
     Database, Cpu, Globe, Lock
 } from 'lucide-react'
 
-// ── Tab components (imported inline for now, will be split in parts 2-4)
 import AdminUsersTab from './AdminUsersTab'
 import AdminGroupsTab from './AdminGroupsTab'
+import AdminMessagesTab from './AdminMessagesTab'
 
 export default function AdminPage() {
     const navigate = useNavigate()
@@ -22,13 +22,10 @@ export default function AdminPage() {
     const [error, setError] = useState('')
     const [refreshing, setRefreshing] = useState(false)
 
-    useEffect(() => {
-        fetchStats()
-    }, [])
+    useEffect(() => { fetchStats() }, [])
 
     const fetchStats = async () => {
-        setLoading(true)
-        setError('')
+        setLoading(true); setError('')
         try {
             const [usersRes, groupsRes] = await Promise.all([
                 api.get('/admin/users'),
@@ -61,6 +58,7 @@ export default function AdminPage() {
         { id: 'dashboard', label: 'Dashboard', icon: <BarChart2 size={16} /> },
         { id: 'users', label: 'Users', icon: <UserIcon size={16} /> },
         { id: 'groups', label: 'Groups', icon: <Users size={16} /> },
+        { id: 'messages', label: 'Messages', icon: <MessageSquare size={16} /> },
     ]
 
     return (
@@ -121,11 +119,13 @@ export default function AdminPage() {
                             {tab === 'dashboard' && 'Dashboard'}
                             {tab === 'users' && 'User Management'}
                             {tab === 'groups' && 'Group Management'}
+                            {tab === 'messages' && 'Messages & Chats'}
                         </h1>
                         <p style={s.pageSubtitle}>
                             {tab === 'dashboard' && 'Overview of your JoChat platform'}
                             {tab === 'users' && 'Manage accounts, roles and permissions'}
                             {tab === 'groups' && 'Monitor and manage all groups'}
+                            {tab === 'messages' && 'View and moderate chat messages'}
                         </p>
                     </div>
                     <button
@@ -145,6 +145,7 @@ export default function AdminPage() {
                     )}
                     {tab === 'users' && <AdminUsersTab />}
                     {tab === 'groups' && <AdminGroupsTab />}
+                    {tab === 'messages' && <AdminMessagesTab />}
                 </div>
             </div>
         </div>
@@ -272,24 +273,9 @@ function DashboardTab({ stats, loading, error }) {
                         <span style={d.cardTitle}>User Overview</span>
                     </div>
                     <div style={d.overviewBars}>
-                        <OverviewBar
-                            label="Verified"
-                            value={stats?.verifiedUsers}
-                            total={stats?.totalUsers}
-                            color="#6366f1"
-                        />
-                        <OverviewBar
-                            label="Online"
-                            value={stats?.onlineUsers}
-                            total={stats?.totalUsers}
-                            color="#10b981"
-                        />
-                        <OverviewBar
-                            label="Admins"
-                            value={stats?.adminCount}
-                            total={stats?.totalUsers}
-                            color="#f59e0b"
-                        />
+                        <OverviewBar label="Verified" value={stats?.verifiedUsers} total={stats?.totalUsers} color="#6366f1" />
+                        <OverviewBar label="Online" value={stats?.onlineUsers} total={stats?.totalUsers} color="#10b981" />
+                        <OverviewBar label="Admins" value={stats?.adminCount} total={stats?.totalUsers} color="#f59e0b" />
                     </div>
                 </div>
 
@@ -322,7 +308,9 @@ function OverviewBar({ label, value, total, color }) {
         <div style={d.barWrap}>
             <div style={d.barTop}>
                 <span style={d.barLabel}>{label}</span>
-                <span style={{ ...d.barPct, color }}>{value} <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11 }}>/ {total}</span></span>
+                <span style={{ ...d.barPct, color }}>
+                    {value} <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11 }}>/ {total}</span>
+                </span>
             </div>
             <div style={d.barTrack}>
                 <div style={{ ...d.barFill, width: `${pct}%`, background: color }} />
@@ -335,140 +323,76 @@ function OverviewBar({ label, value, total, color }) {
 /* ─── Styles ─── */
 const s = {
     page: {
-        display: 'flex',
-        height: '100vh',
+        display: 'flex', height: '100vh',
         background: '#07070f',
         fontFamily: "'Inter', sans-serif",
-        color: '#f1f1f8',
-        overflow: 'hidden',
+        color: '#f1f1f8', overflow: 'hidden',
     },
     sidebar: {
-        width: '240px',
-        minWidth: '240px',
+        width: '240px', minWidth: '240px',
         background: 'linear-gradient(180deg, #0d0d1a 0%, #080810 100%)',
         borderRight: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
     },
     sidebarTop: {
         padding: '24px 20px 20px',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
     },
-    brand: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-    },
+    brand: { display: 'flex', alignItems: 'center', gap: '12px' },
     brandIcon: {
-        width: '40px', height: '40px',
-        borderRadius: '12px',
+        width: '40px', height: '40px', borderRadius: '12px',
         background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 4px 16px rgba(99,102,241,0.4)',
-        flexShrink: 0,
+        boxShadow: '0 4px 16px rgba(99,102,241,0.4)', flexShrink: 0,
     },
-    brandName: {
-        fontSize: '14px',
-        fontWeight: '700',
-        color: '#f1f1f8',
-        letterSpacing: '-0.02em',
-    },
-    brandSub: {
-        fontSize: '11px',
-        color: 'rgba(255,255,255,0.35)',
-        marginTop: '2px',
-    },
+    brandName: { fontSize: '14px', fontWeight: '700', color: '#f1f1f8', letterSpacing: '-0.02em' },
+    brandSub: { fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' },
     nav: {
-        flex: 1,
-        padding: '16px 12px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '4px',
+        flex: 1, padding: '16px 12px',
+        display: 'flex', flexDirection: 'column', gap: '4px',
     },
     navItem: {
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        padding: '10px 14px',
-        borderRadius: '10px',
-        border: 'none',
-        fontSize: '13px',
-        fontWeight: '600',
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        transition: 'all 0.15s',
-        textAlign: 'left',
-        letterSpacing: '-0.01em',
+        width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+        padding: '10px 14px', borderRadius: '10px', border: 'none',
+        fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+        fontFamily: 'inherit', transition: 'all 0.15s',
+        textAlign: 'left', letterSpacing: '-0.01em',
     },
     sidebarBottom: {
         padding: '16px 12px',
         borderTop: '1px solid rgba(255,255,255,0.06)',
     },
     backBtn: {
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
+        width: '100%', display: 'flex', alignItems: 'center', gap: '8px',
         padding: '10px 14px',
         background: 'rgba(255,255,255,0.04)',
         border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '10px',
-        color: 'rgba(255,255,255,0.45)',
-        fontSize: '12px',
-        fontWeight: '600',
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        transition: 'all 0.15s',
+        borderRadius: '10px', color: 'rgba(255,255,255,0.45)',
+        fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+        fontFamily: 'inherit', transition: 'all 0.15s',
     },
-    main: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-    },
+    main: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
     header: {
         padding: '24px 32px 20px',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
         background: 'rgba(255,255,255,0.01)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         flexShrink: 0,
     },
     pageTitle: {
-        fontSize: '22px',
-        fontWeight: '700',
-        letterSpacing: '-0.03em',
-        color: '#f1f1f8',
-        margin: 0,
+        fontSize: '22px', fontWeight: '700', letterSpacing: '-0.03em',
+        color: '#f1f1f8', margin: 0,
     },
-    pageSubtitle: {
-        fontSize: '13px',
-        color: 'rgba(255,255,255,0.35)',
-        marginTop: '4px',
-    },
+    pageSubtitle: { fontSize: '13px', color: 'rgba(255,255,255,0.35)', marginTop: '4px' },
     refreshBtn: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
+        display: 'flex', alignItems: 'center', gap: '6px',
         background: 'rgba(99,102,241,0.12)',
         border: '1px solid rgba(99,102,241,0.25)',
-        borderRadius: '10px',
-        padding: '8px 14px',
-        color: '#a5b4fc',
-        fontSize: '12px',
-        fontWeight: '600',
-        cursor: 'pointer',
-        fontFamily: 'inherit',
-        transition: 'opacity 0.15s',
+        borderRadius: '10px', padding: '8px 14px',
+        color: '#a5b4fc', fontSize: '12px', fontWeight: '600',
+        cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 0.15s',
     },
-    content: {
-        flex: 1,
-        overflowY: 'auto',
-        padding: '28px 32px',
-    },
+    content: { flex: 1, overflowY: 'auto', padding: '28px 32px' },
 }
 
 const d = {
@@ -481,8 +405,7 @@ const d = {
         width: '28px', height: '28px',
         border: '2px solid rgba(255,255,255,0.1)',
         borderTop: '2px solid #6366f1',
-        borderRadius: '50%',
-        animation: 'spin 0.8s linear infinite',
+        borderRadius: '50%', animation: 'spin 0.8s linear infinite',
     },
     loadingText: { fontSize: '13px', color: 'rgba(255,255,255,0.35)' },
     errorBox: {
@@ -492,58 +415,33 @@ const d = {
         borderRadius: '12px', padding: '16px 20px',
         color: '#f87171', fontSize: '14px', fontWeight: '500',
     },
-    wrap: {
-        display: 'flex', flexDirection: 'column', gap: '20px',
-    },
+    wrap: { display: 'flex', flexDirection: 'column', gap: '20px' },
     statsGrid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '16px',
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px',
     },
     statCard: {
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid',
-        borderRadius: '16px',
-        padding: '20px',
-        animation: 'fadeUp 0.3s ease forwards',
-        transition: 'background 0.2s',
+        background: 'rgba(255,255,255,0.03)', border: '1px solid',
+        borderRadius: '16px', padding: '20px',
+        animation: 'fadeUp 0.3s ease forwards', transition: 'background 0.2s',
     },
     statIcon: {
-        width: '44px', height: '44px',
-        borderRadius: '12px',
+        width: '44px', height: '44px', borderRadius: '12px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
     },
     trendBadge: {
         display: 'flex', alignItems: 'center', gap: '5px',
         borderRadius: '999px', padding: '3px 8px',
-        fontSize: '10px', fontWeight: '700',
-        letterSpacing: '0.04em',
+        fontSize: '10px', fontWeight: '700', letterSpacing: '0.04em',
     },
     liveDot: {
         width: '6px', height: '6px', borderRadius: '50%',
-        background: '#10b981',
-        boxShadow: '0 0 6px #10b981',
-        display: 'inline-block',
-        animation: 'pulse 1.5s infinite',
+        background: '#10b981', boxShadow: '0 0 6px #10b981',
+        display: 'inline-block', animation: 'pulse 1.5s infinite',
     },
-    statValue: {
-        fontSize: '36px', fontWeight: '800',
-        letterSpacing: '-0.04em', lineHeight: 1,
-    },
-    statLabel: {
-        fontSize: '13px', fontWeight: '600',
-        color: 'rgba(255,255,255,0.6)',
-        marginTop: '6px', letterSpacing: '-0.01em',
-    },
-    statSub: {
-        fontSize: '11px', color: 'rgba(255,255,255,0.3)',
-        marginTop: '3px',
-    },
-    bottomRow: {
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '16px',
-    },
+    statValue: { fontSize: '36px', fontWeight: '800', letterSpacing: '-0.04em', lineHeight: 1 },
+    statLabel: { fontSize: '13px', fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginTop: '6px', letterSpacing: '-0.01em' },
+    statSub: { fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '3px' },
+    bottomRow: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' },
     overviewCard: {
         background: 'rgba(255,255,255,0.03)',
         border: '1px solid rgba(255,255,255,0.07)',
@@ -554,49 +452,25 @@ const d = {
         border: '1px solid rgba(255,255,255,0.07)',
         borderRadius: '16px', padding: '20px',
     },
-    cardHeader: {
-        display: 'flex', alignItems: 'center', gap: '8px',
-        marginBottom: '18px',
-    },
-    cardTitle: {
-        fontSize: '13px', fontWeight: '700',
-        color: 'rgba(255,255,255,0.7)', letterSpacing: '-0.01em',
-    },
+    cardHeader: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' },
+    cardTitle: { fontSize: '13px', fontWeight: '700', color: 'rgba(255,255,255,0.7)', letterSpacing: '-0.01em' },
     allOkBadge: {
-        marginLeft: 'auto',
-        fontSize: '10px', fontWeight: '700',
-        background: 'rgba(16,185,129,0.12)',
-        border: '1px solid rgba(16,185,129,0.25)',
-        color: '#10b981',
-        borderRadius: '999px', padding: '3px 8px',
+        marginLeft: 'auto', fontSize: '10px', fontWeight: '700',
+        background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)',
+        color: '#10b981', borderRadius: '999px', padding: '3px 8px',
     },
     overviewBars: { display: 'flex', flexDirection: 'column', gap: '16px' },
     barWrap: { display: 'flex', flexDirection: 'column', gap: '6px' },
-    barTop: {
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between',
-    },
+    barTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
     barLabel: { fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: '500' },
     barPct: { fontSize: '13px', fontWeight: '700' },
-    barTrack: {
-        height: '6px',
-        background: 'rgba(255,255,255,0.06)',
-        borderRadius: '999px', overflow: 'hidden',
-    },
-    barFill: {
-        height: '100%', borderRadius: '999px',
-        transition: 'width 0.6s cubic-bezier(0.34,1.56,0.64,1)',
-    },
-    barPctLabel: {
-        fontSize: '10px', fontWeight: '700',
-        letterSpacing: '0.04em', textAlign: 'right',
-    },
+    barTrack: { height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '999px', overflow: 'hidden' },
+    barFill: { height: '100%', borderRadius: '999px', transition: 'width 0.6s cubic-bezier(0.34,1.56,0.64,1)' },
+    barPctLabel: { fontSize: '10px', fontWeight: '700', letterSpacing: '0.04em', textAlign: 'right' },
     systemList: { display: 'flex', flexDirection: 'column', gap: '10px' },
     systemRow: {
         display: 'flex', alignItems: 'center', gap: '10px',
-        padding: '8px 12px',
-        background: 'rgba(255,255,255,0.03)',
-        borderRadius: '8px',
+        padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px',
     },
     systemIcon: { color: 'rgba(255,255,255,0.4)', flexShrink: 0, display: 'flex' },
     systemLabel: { fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: '500', width: '80px' },

@@ -7,6 +7,7 @@ import com.example.jochat.repository.GroupRepository;
 import com.example.jochat.repository.UserRepository;
 import com.example.jochat.service.ChatService;
 import com.example.jochat.service.UserService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,9 +16,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.example.jochat.dto.ChatDto;
+import com.example.jochat.dto.MessageDto;
+import com.example.jochat.entity.Chat;
+import com.example.jochat.entity.Message;
+import com.example.jochat.repository.ChatRepository;
+import com.example.jochat.repository.MessageRepository;
+
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
+
+    @Autowired
+    private ChatRepository chatRepository;
+    @Autowired
+    private MessageRepository messageRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -78,5 +91,65 @@ public class AdminController {
     public ResponseEntity<?> deleteGroup(@PathVariable Long id) {
         groupRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("message", "Group deleted successfully"));
+    }
+
+    @GetMapping("/chats")
+    public ResponseEntity<List<ChatDto>> getAllChats() {
+        List<Chat> chats = chatRepository.findAll();
+        User dummyUser = null; // Для подсчёта без фильтра
+
+        List<ChatDto> result = chats.stream().map(chat -> {
+            ChatDto dto = new ChatDto();
+            dto.setId(chat.getId());
+            dto.setType(chat.getType().name());
+            dto.setName(chat.getName());
+            dto.setAvatarUrl(chat.getAvatarUrl());
+            dto.setCreatedAt(chat.getCreatedAt());
+
+            List<UserDto> members = chat.getMembers()
+                    .stream()
+                    .map(userService::toDto)
+                    .collect(Collectors.toList());
+            dto.setMembers(members);
+
+            if (chat.getLastMessage() != null) {
+                dto.setLastMessage(chatService.toMessageDto(chat.getLastMessage()));
+            }
+
+            // Считаем кол-во сообщений
+            long msgCount = messageRepository.countByChat(chat);
+            // Добавь поле messageCount в ChatDto (или используй unreadCount временно)
+            // dto.setMessageCount((int) msgCount);
+
+            return dto;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(result);
+    }
+
+// ─── GET /api/admin/chats/{id}/messages ─────────────────────
+    @GetMapping("/chats/{id}/messages")
+    public ResponseEntity<List<MessageDto>> getChatMessages(@PathVariable Long id) {
+        Chat chat = chatRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Chat not found"));
+
+        List<MessageDto> messages = messageRepository
+                .findByChatOrderByCreatedAtAsc(chat)
+                .stream()
+                .map(chatService::toMessageDto)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(messages);
+    }
+
+// ─── DELETE /api/admin/messages/{id} ─────────────────────────
+    @DeleteMapping("/messages/{id}")
+    public ResponseEntity<?> adminDeleteMessage(@PathVariable Long id) {
+        Message msg = messageRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Message not found"));
+        msg.setDeleted(true);
+        msg.setContent("Message deleted by admin");
+        messageRepository.save(msg);
+        return ResponseEntity.ok(Map.of("message", "Message deleted"));
     }
 }

@@ -13,6 +13,11 @@ public class ChatDto {
     private MessageDto lastMessage;
     private LocalDateTime createdAt;
     private int unreadCount;
+    
+    private int messageCount;
+  public int getMessageCount() { return messageCount; }
+  public void setMessageCount(int messageCount) { this.messageCount = messageCount; }
+
 
     public ChatDto() {}
 
