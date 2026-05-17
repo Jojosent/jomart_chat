@@ -12,6 +12,7 @@ import java.util.List;
 public interface MessageRepository extends JpaRepository<Message, Long> {
 
     List<Message> findByChatOrderByCreatedAtAsc(Chat chat);
+    long countByChat(Chat chat);
 
     // Непрочитанные (SENT или DELIVERED), не от текущего юзера
     @Query("""
