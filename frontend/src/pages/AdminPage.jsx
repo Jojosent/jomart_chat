@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '../api/auth'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
     Users, Shield, Trash2, ArrowLeft, Loader,
     User as UserIcon, MessageSquare, ShieldAlert,
@@ -15,6 +16,7 @@ import AdminGroupsTab from './AdminGroupsTab'
 import AdminMessagesTab from './AdminMessagesTab'
 
 export default function AdminPage() {
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const [tab, setTab] = useState('dashboard')
     const [stats, setStats] = useState(null)
@@ -42,7 +44,7 @@ export default function AdminPage() {
                 totalMembers: groups.reduce((acc, g) => acc + (g.memberCount || 0), 0),
             })
         } catch (err) {
-            setError('Failed to load statistics')
+            setError(t('admin.statsError', 'Failed to load statistics'))
         } finally {
             setLoading(false)
         }
@@ -55,10 +57,10 @@ export default function AdminPage() {
     }
 
     const TABS = [
-        { id: 'dashboard', label: 'Dashboard', icon: <BarChart2 size={16} /> },
-        { id: 'users', label: 'Users', icon: <UserIcon size={16} /> },
-        { id: 'groups', label: 'Groups', icon: <Users size={16} /> },
-        { id: 'messages', label: 'Messages', icon: <MessageSquare size={16} /> },
+        { id: 'dashboard', label: t('admin.dashboard'), icon: <BarChart2 size={16} /> },
+        { id: 'users', label: t('admin.users'), icon: <UserIcon size={16} /> },
+        { id: 'groups', label: t('admin.groups'), icon: <Users size={16} /> },
+        { id: 'messages', label: t('admin.messages'), icon: <MessageSquare size={16} /> },
     ]
 
     return (
@@ -71,8 +73,8 @@ export default function AdminPage() {
                             <Shield size={18} color="#fff" />
                         </div>
                         <div>
-                            <div style={s.brandName}>Admin Panel</div>
-                            <div style={s.brandSub}>JoChat Control Center</div>
+                            <div style={s.brandName}>{t('admin.title')}</div>
+                            <div style={s.brandSub}>{t('admin.subtitle')}</div>
                         </div>
                     </div>
                 </div>
@@ -105,7 +107,7 @@ export default function AdminPage() {
                 <div style={s.sidebarBottom}>
                     <button style={s.backBtn} onClick={() => navigate('/profile')}>
                         <ArrowLeft size={15} />
-                        Back to Profile
+                        {t('admin.backToProfile', 'Back to Profile')}
                     </button>
                 </div>
             </aside>
@@ -116,16 +118,16 @@ export default function AdminPage() {
                 <header style={s.header}>
                     <div>
                         <h1 style={s.pageTitle}>
-                            {tab === 'dashboard' && 'Dashboard'}
-                            {tab === 'users' && 'User Management'}
-                            {tab === 'groups' && 'Group Management'}
-                            {tab === 'messages' && 'Messages & Chats'}
+                            {tab === 'dashboard' && t('admin.dashboard')}
+                            {tab === 'users' && t('admin.userManagement')}
+                            {tab === 'groups' && t('admin.groupManagement')}
+                            {tab === 'messages' && t('admin.messagesChats')}
                         </h1>
                         <p style={s.pageSubtitle}>
-                            {tab === 'dashboard' && 'Overview of your JoChat platform'}
-                            {tab === 'users' && 'Manage accounts, roles and permissions'}
-                            {tab === 'groups' && 'Monitor and manage all groups'}
-                            {tab === 'messages' && 'View and moderate chat messages'}
+                            {tab === 'dashboard' && t('admin.overview')}
+                            {tab === 'users' && t('admin.manageAccounts')}
+                            {tab === 'groups' && t('admin.monitorGroups')}
+                            {tab === 'messages' && t('admin.moderateMessages')}
                         </p>
                     </div>
                     <button
@@ -134,7 +136,7 @@ export default function AdminPage() {
                         disabled={refreshing}
                     >
                         <RefreshCw size={14} style={{ animation: refreshing ? 'spin 0.8s linear infinite' : 'none' }} />
-                        Refresh
+                        {t('admin.refresh')}
                     </button>
                 </header>
 
@@ -154,10 +156,11 @@ export default function AdminPage() {
 
 /* ── Dashboard Tab ── */
 function DashboardTab({ stats, loading, error }) {
+    const { t } = useTranslation()
     if (loading) return (
         <div style={d.center}>
             <div style={d.spinner} />
-            <span style={d.loadingText}>Loading statistics...</span>
+            <span style={d.loadingText}>{t('admin.loadingStats', 'Loading statistics...')}</span>
         </div>
     )
 
@@ -170,43 +173,43 @@ function DashboardTab({ stats, loading, error }) {
 
     const statCards = [
         {
-            label: 'Total Users',
+            label: t('admin.totalUsers'),
             value: stats?.totalUsers ?? 0,
             icon: <UserIcon size={20} />,
             color: '#6366f1',
             bg: 'rgba(99,102,241,0.12)',
             border: 'rgba(99,102,241,0.25)',
-            sub: `${stats?.verifiedUsers ?? 0} verified`,
+            sub: `${stats?.verifiedUsers ?? 0} ${t('admin.verified').toLowerCase()}`,
             trend: '+12%',
         },
         {
-            label: 'Online Now',
+            label: t('admin.onlineNow'),
             value: stats?.onlineUsers ?? 0,
             icon: <Activity size={20} />,
             color: '#10b981',
             bg: 'rgba(16,185,129,0.12)',
             border: 'rgba(16,185,129,0.25)',
-            sub: 'active users',
+            sub: t('admin.activeUsers', 'active users'),
             trend: 'live',
         },
         {
-            label: 'Total Groups',
+            label: t('admin.totalGroups'),
             value: stats?.totalGroups ?? 0,
             icon: <Users size={20} />,
             color: '#f59e0b',
             bg: 'rgba(245,158,11,0.12)',
             border: 'rgba(245,158,11,0.25)',
-            sub: `${stats?.totalMembers ?? 0} total members`,
+            sub: `${stats?.totalMembers ?? 0} ${t('admin.totalMembers', 'total members')}`,
             trend: '+5%',
         },
         {
-            label: 'Admins',
+            label: t('admin.admins'),
             value: stats?.adminCount ?? 0,
             icon: <Crown size={20} />,
             color: '#ec4899',
             bg: 'rgba(236,72,153,0.12)',
             border: 'rgba(236,72,153,0.25)',
-            sub: 'with full access',
+            sub: t('admin.fullAccess', 'with full access'),
             trend: '',
         },
     ]
@@ -270,12 +273,12 @@ function DashboardTab({ stats, loading, error }) {
                 <div style={d.overviewCard}>
                     <div style={d.cardHeader}>
                         <TrendingUp size={15} color="#6366f1" />
-                        <span style={d.cardTitle}>User Overview</span>
+                        <span style={d.cardTitle}>{t('admin.userOverview', 'User Overview')}</span>
                     </div>
                     <div style={d.overviewBars}>
-                        <OverviewBar label="Verified" value={stats?.verifiedUsers} total={stats?.totalUsers} color="#6366f1" />
-                        <OverviewBar label="Online" value={stats?.onlineUsers} total={stats?.totalUsers} color="#10b981" />
-                        <OverviewBar label="Admins" value={stats?.adminCount} total={stats?.totalUsers} color="#f59e0b" />
+                        <OverviewBar label={t('admin.verified')} value={stats?.verifiedUsers} total={stats?.totalUsers} color="#6366f1" />
+                        <OverviewBar label={t('common.online')} value={stats?.onlineUsers} total={stats?.totalUsers} color="#10b981" />
+                        <OverviewBar label={t('admin.admins')} value={stats?.adminCount} total={stats?.totalUsers} color="#f59e0b" />
                     </div>
                 </div>
 
@@ -283,8 +286,8 @@ function DashboardTab({ stats, loading, error }) {
                 <div style={d.systemCard}>
                     <div style={d.cardHeader}>
                         <Server size={15} color="#6366f1" />
-                        <span style={d.cardTitle}>System Status</span>
-                        <span style={d.allOkBadge}>All Systems Operational</span>
+                        <span style={d.cardTitle}>{t('admin.systemStatus')}</span>
+                        <span style={d.allOkBadge}>{t('admin.allSystemsOk')}</span>
                     </div>
                     <div style={d.systemList}>
                         {systemInfo.map((item, i) => (

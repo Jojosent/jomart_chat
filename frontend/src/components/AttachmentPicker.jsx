@@ -1,38 +1,40 @@
 import { useRef, useEffect } from 'react'
 import { Image, FileText, Camera, X } from 'lucide-react'
 
-const OPTIONS = [
-    {
-        key: 'PHOTO',
-        label: 'Photo or Video',
-        icon: <Image size={20} />,
-        color: '#6366f1',
-        bg: 'rgba(99,102,241,0.12)',
-        border: 'rgba(99,102,241,0.25)',
-        accept: 'image/*,video/*',
-    },
-    {
-        key: 'DOCUMENT',
-        label: 'Document',
-        icon: <FileText size={20} />,
-        color: '#10b981',
-        bg: 'rgba(16,185,129,0.12)',
-        border: 'rgba(16,185,129,0.25)',
-        accept: '*/*',
-    },
-    {
-        key: 'CAMERA',
-        label: 'Camera',
-        icon: <Camera size={20} />,
-        color: '#f59e0b',
-        bg: 'rgba(245,158,11,0.12)',
-        border: 'rgba(245,158,11,0.25)',
-        accept: 'image/*',
-        capture: 'environment',
-    },
-]
+import { useTranslation } from 'react-i18next'
 
 export default function AttachmentPicker({ onSelect, onClose, onCameraOpen }) {
+    const { t } = useTranslation()
+    const OPTIONS = [
+        {
+            key: 'PHOTO',
+            label: t('attachment.photoVideo', 'Photo or Video'),
+            icon: <Image size={20} />,
+            color: '#6366f1',
+            bg: 'rgba(99,102,241,0.12)',
+            border: 'rgba(99,102,241,0.25)',
+            accept: 'image/*,video/*',
+        },
+        {
+            key: 'DOCUMENT',
+            label: t('attachment.document', 'Document'),
+            icon: <FileText size={20} />,
+            color: '#10b981',
+            bg: 'rgba(16,185,129,0.12)',
+            border: 'rgba(16,185,129,0.25)',
+            accept: '*/*',
+        },
+        {
+            key: 'CAMERA',
+            label: t('camera.title'),
+            icon: <Camera size={20} />,
+            color: '#f59e0b',
+            bg: 'rgba(245,158,11,0.12)',
+            border: 'rgba(245,158,11,0.25)',
+            accept: 'image/*',
+            capture: 'environment',
+        },
+    ]
     const refs = {
         PHOTO: useRef(),
         DOCUMENT: useRef(),

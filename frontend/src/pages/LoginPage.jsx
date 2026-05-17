@@ -4,8 +4,10 @@ import { loginUser } from '../api/auth'
 import useAuthStore from '../store/authStore'
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { LangSwitcher } from '../components/LangSwitcher'
+import { useTranslation } from 'react-i18next'
 
 export default function LoginPage() {
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const setAuth = useAuthStore((s) => s.setAuth)
 
@@ -49,11 +51,14 @@ export default function LoginPage() {
                         </svg>
                     </div>
                     <span style={s.logoText}>JoChat</span>
+                    <div style={{ marginLeft: 'auto', width: '100px' }}>
+                        <LangSwitcher />
+                    </div>
                 </div>
 
                 <div style={s.heading}>
-                    <h1 style={s.title}>Welcome back</h1>
-                    <p style={s.subtitle}>Sign in to continue your conversations</p>
+                    <h1 style={s.title}>{t('auth.welcomeBack')}</h1>
+                    <p style={s.subtitle}>{t('auth.loginSubtitle')}</p>
                 </div>
 
                 {error && (
@@ -66,14 +71,14 @@ export default function LoginPage() {
                 <form onSubmit={handleLogin} style={s.form}>
                     {/* Email */}
                     <div style={s.fieldGroup}>
-                        <label style={s.label}>Email address</label>
+                        <label style={s.label}>{t('auth.emailAddress')}</label>
                         <div style={s.inputWrap}>
                             <Mail size={15} color="var(--text-muted)" style={s.inputIcon} />
                             <input
                                 style={s.input}
                                 name="email"
                                 type="email"
-                                placeholder="you@example.com"
+                                placeholder={t('auth.enterEmail')}
                                 value={form.email}
                                 onChange={handleChange}
                                 required
@@ -83,14 +88,14 @@ export default function LoginPage() {
 
                     {/* Password */}
                     <div style={s.fieldGroup}>
-                        <label style={s.label}>Password</label>
+                        <label style={s.label}>{t('auth.password')}</label>
                         <div style={s.inputWrap}>
                             <Lock size={15} color="var(--text-muted)" style={s.inputIcon} />
                             <input
                                 style={{ ...s.input, paddingRight: '44px' }}
                                 name="password"
                                 type={showPass ? 'text' : 'password'}
-                                placeholder="••••••••••"
+                                placeholder={t('auth.enterPassword')}
                                 value={form.password}
                                 onChange={handleChange}
                                 required
@@ -113,7 +118,7 @@ export default function LoginPage() {
                             <span style={s.spinner} />
                         ) : (
                             <>
-                                Sign in
+                                {t('auth.loginBtn')}
                                 <ArrowRight size={16} />
                             </>
                         )}
@@ -121,9 +126,9 @@ export default function LoginPage() {
                 </form>
 
                 <p style={s.switchText}>
-                    Don't have an account?{' '}
+                    {t('auth.noAccount')}{' '}
                     <span style={s.switchLink} onClick={() => navigate('/register')}>
-                        Create one
+                        {t('auth.createOne')}
                     </span>
                 </p>
             </div>

@@ -13,8 +13,10 @@ import {
     Search, ShieldAlert, ChevronRight, UserPlus
 } from 'lucide-react'
 import { LangSwitcher } from '../components/LangSwitcher'
+import { useTranslation } from 'react-i18next'
 
 export default function GroupSettingsPage() {
+    const { t } = useTranslation()
     const { id } = useParams()
     const navigate = useNavigate()
     const me = useAuthStore((s) => s.user)
@@ -55,7 +57,7 @@ export default function GroupSettingsPage() {
             const res = await getGroup(id)
             setGroup(res.data)
             setForm({ name: res.data.name, description: res.data.description || '' })
-        } catch { setError('Failed to load group') }
+        } catch { setError(t('group.loadError', 'Failed to load group')) }
         finally { setLoading(false) }
     }
 
@@ -68,8 +70,8 @@ export default function GroupSettingsPage() {
         setSaving(true); setError('')
         try {
             const res = await updateGroup(id, form)
-            setGroup(res.data); setEditMode(false); flash('Group updated')
-        } catch (err) { flash(err.response?.data?.message || 'Update failed', 'error') }
+            setGroup(res.data); setEditMode(false); flash(t('group.updated'))
+        } catch (err) { flash(err.response?.data?.message || t('common.error'), 'error') }
         finally { setSaving(false) }
     }
 
@@ -78,8 +80,8 @@ export default function GroupSettingsPage() {
         setAvatarLoading(true)
         try {
             const res = await uploadGroupAvatar(id, file)
-            setGroup(res.data); flash('Photo updated')
-        } catch (err) { flash(err.response?.data?.message || 'Upload failed', 'error') }
+            setGroup(res.data); flash(t('group.avatarUpdated'))
+        } catch (err) { flash(err.response?.data?.message || t('common.error'), 'error') }
         finally { setAvatarLoading(false) }
     }
 
@@ -87,15 +89,15 @@ export default function GroupSettingsPage() {
         try {
             const res = await addMember(id, user.id)
             setGroup(res.data); setSearchQuery(''); setSearchResults([])
-            flash(`${user.fullName} added`)
-        } catch (err) { flash(err.response?.data?.message || 'Failed', 'error') }
+            flash(`${user.fullName} ${t('group.added')}`)
+        } catch (err) { flash(err.response?.data?.message || t('common.error'), 'error') }
     }
 
     const handleRemoveMember = async (userId, name) => {
         try {
             const res = await removeMember(id, userId)
-            setGroup(res.data); flash(`${name} removed`)
-        } catch (err) { flash(err.response?.data?.message || 'Failed', 'error') }
+            setGroup(res.data); flash(`${name} ${t('group.removed')}`)
+        } catch (err) { flash(err.response?.data?.message || t('common.error'), 'error') }
     }
 
     const handleTransferAdmin = async () => {
@@ -103,18 +105,18 @@ export default function GroupSettingsPage() {
         try {
             const res = await transferAdmin(id, transferTo.id)
             setGroup(res.data); setTransferTo(null)
-            flash(`Admin transferred to ${transferTo.fullName}`)
-        } catch (err) { flash(err.response?.data?.message || 'Failed', 'error') }
+            flash(`${t('group.adminTransferred')} ${transferTo.fullName}`)
+        } catch (err) { flash(err.response?.data?.message || t('common.error'), 'error') }
     }
 
     const handleLeave = async () => {
         try { await leaveGroup(id); navigate('/chat') }
-        catch (err) { flash(err.response?.data?.message || 'Failed', 'error'); setConfirmLeave(false) }
+        catch (err) { flash(err.response?.data?.message || t('common.error'), 'error'); setConfirmLeave(false) }
     }
 
     const handleDelete = async () => {
         try { await deleteGroup(id); navigate('/chat') }
-        catch (err) { flash(err.response?.data?.message || 'Failed', 'error'); setConfirmDelete(false) }
+        catch (err) { flash(err.response?.data?.message || t('common.error'), 'error'); setConfirmDelete(false) }
     }
 
     if (loading) return (
@@ -131,9 +133,9 @@ export default function GroupSettingsPage() {
             <header style={s.header}>
                 <button style={s.backBtn} onClick={() => navigate('/chat')}>
                     <ArrowLeft size={16} />
-                    Back
+                    {t('common.back')}
                 </button>
-                <span style={s.headerTitle}>Group settings</span>
+                <span style={s.headerTitle}>{t('group.settings')}</span>
                 <div style={{ width: 72 }} />
             </header>
 
@@ -167,12 +169,12 @@ export default function GroupSettingsPage() {
                     <div style={s.heroInfo}>
                         <h2 style={s.heroName}>{group?.name}</h2>
                         <p style={s.heroMeta}>
-                            {group?.memberCount} members
+                            {group?.memberCount} {t('group.memberCount')}
                         </p>
                         {isAdmin && (
                             <div style={s.adminPill}>
                                 <Crown size={11} />
-                                Administrator
+                                {t('group.admin')}
                             </div>
                         )}
                     </div>
@@ -185,11 +187,11 @@ export default function GroupSettingsPage() {
                             <div style={s.cardIconWrap}>
                                 <Edit3 size={13} color="var(--accent)" />
                             </div>
-                            <span style={s.cardTitle}>Group info</span>
+                            <span style={s.cardTitle}>{t('group.info')}</span>
                         </div>
                         {isAdmin && !editMode && (
                             <button style={s.editBtn} onClick={() => setEditMode(true)}>
-                                <Edit3 size={13} /> Edit
+                                <Edit3 size={13} /> {t('group.edit')}
                             </button>
                         )}
                         {editMode && (
@@ -199,7 +201,7 @@ export default function GroupSettingsPage() {
                                 </button>
                                 <button style={s.saveBtn} onClick={handleSave} disabled={saving}>
                                     {saving ? <div style={{ ...s.spinner, width: 13, height: 13 }} /> : <Check size={13} />}
-                                    {saving ? 'Saving' : 'Save'}
+                                    {saving ? t('group.saving') : t('group.save')}
                                 </button>
                             </div>
                         )}
@@ -207,7 +209,7 @@ export default function GroupSettingsPage() {
                     <div style={s.fieldList}>
                         {/* Name */}
                         <div style={s.fieldRow}>
-                            <span style={s.fieldLabel}>Name</span>
+                            <span style={s.fieldLabel}>{t('group.name')}</span>
                             {editMode
                                 ? <input style={s.input} value={form.name}
                                     onChange={e => setForm({ ...form, name: e.target.value })} maxLength={50} />
@@ -216,13 +218,13 @@ export default function GroupSettingsPage() {
                         </div>
                         {/* Description */}
                         <div style={{ ...s.fieldRow, borderBottom: 'none' }}>
-                            <span style={s.fieldLabel}>Description</span>
+                            <span style={s.fieldLabel}>{t('group.description')}</span>
                             {editMode
                                 ? <textarea style={s.textarea} value={form.description}
                                     onChange={e => setForm({ ...form, description: e.target.value })}
                                     maxLength={200} rows={3} />
                                 : <span style={s.fieldValue}>
-                                    {group?.description || <span style={s.empty}>No description</span>}
+                                    {group?.description || <span style={s.empty}>{t('group.noDescription')}</span>}
                                 </span>
                             }
                         </div>
@@ -236,7 +238,7 @@ export default function GroupSettingsPage() {
                             <div style={s.cardIconWrap}>
                                 <Users size={13} color="var(--accent)" />
                             </div>
-                            <span style={s.cardTitle}>Members</span>
+                            <span style={s.cardTitle}>{t('group.members')}</span>
                             <span style={s.memberCountBadge}>{group?.memberCount}</span>
                         </div>
                     </div>
@@ -250,7 +252,7 @@ export default function GroupSettingsPage() {
                                     style={s.searchInput}
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
-                                    placeholder="Add members..."
+                                    placeholder={t('group.addMemberPlaceholder')}
                                 />
                                 {searchQuery && (
                                     <button style={s.clearBtn} onClick={() => { setSearchQuery(''); setSearchResults([]) }}>
@@ -302,7 +304,7 @@ export default function GroupSettingsPage() {
                                     <div style={s.memberInfo}>
                                         <div style={s.memberNameRow}>
                                             <span style={s.memberName}>{member.fullName}</span>
-                                            {isMe && <span style={s.youTag}>You</span>}
+                                            {isMe && <span style={s.youTag}>{t('group.you')}</span>}
                                         </div>
                                         <span style={s.memberHandle}>@{member.username}</span>
                                     </div>
@@ -312,14 +314,14 @@ export default function GroupSettingsPage() {
                                             <button
                                                 style={s.memberActionBtn('accent')}
                                                 onClick={() => setTransferTo(member)}
-                                                title="Transfer admin"
+                                                title={t('group.transferAdmin')}
                                             >
                                                 <Crown size={13} />
                                             </button>
                                             <button
                                                 style={s.memberActionBtn('error')}
                                                 onClick={() => handleRemoveMember(member.id, member.fullName)}
-                                                title="Remove"
+                                                title={t('group.kick')}
                                             >
                                                 <UserMinus size={13} />
                                             </button>
@@ -338,21 +340,21 @@ export default function GroupSettingsPage() {
                             <div style={{ ...s.cardIconWrap, background: 'var(--error-bg)', borderColor: 'rgba(239,68,68,0.2)' }}>
                                 <ShieldAlert size={13} color="var(--error)" />
                             </div>
-                            <span style={{ ...s.cardTitle, color: 'var(--error)' }}>Danger zone</span>
+                            <span style={{ ...s.cardTitle, color: 'var(--error)' }}>{t('group.dangerZone')}</span>
                         </div>
                     </div>
                     <div style={s.dangerActions}>
                         {!isAdmin && (
                             <button style={s.dangerBtn} onClick={() => setConfirmLeave(true)}>
                                 <LogOut size={15} />
-                                Leave group
+                                {t('group.leave')}
                                 <ChevronRight size={14} style={{ marginLeft: 'auto' }} />
                             </button>
                         )}
                         {isAdmin && (
                             <button style={s.dangerBtn} onClick={() => setConfirmDelete(true)}>
                                 <Trash2 size={15} />
-                                Delete group permanently
+                                {t('group.delete')}
                                 <ChevronRight size={14} style={{ marginLeft: 'auto' }} />
                             </button>
                         )}
@@ -363,18 +365,18 @@ export default function GroupSettingsPage() {
             {/* ── Modals ── */}
             {transferTo && (
                 <Modal
-                    title="Transfer admin rights?"
-                    body={<><strong style={{ color: 'var(--text-primary)' }}>{transferTo.fullName}</strong> will become the new administrator. You will lose management access.</>}
-                    confirmLabel="Transfer"
+                    title={t('group.transferConfirm')}
+                    body={<><strong style={{ color: 'var(--text-primary)' }}>{transferTo.fullName}</strong> {t('group.transferText')}</>}
+                    confirmLabel={t('group.transfer')}
                     onConfirm={handleTransferAdmin}
                     onCancel={() => setTransferTo(null)}
                 />
             )}
             {confirmLeave && (
                 <Modal
-                    title="Leave group?"
-                    body="You can be added back later by an admin."
-                    confirmLabel="Leave"
+                    title={t('group.leaveConfirm')}
+                    body={t('group.leaveText')}
+                    confirmLabel={t('group.leaveBtn')}
                     danger
                     onConfirm={handleLeave}
                     onCancel={() => setConfirmLeave(false)}
@@ -382,9 +384,9 @@ export default function GroupSettingsPage() {
             )}
             {confirmDelete && (
                 <Modal
-                    title="Delete group?"
-                    body="All messages will be permanently deleted. This cannot be undone."
-                    confirmLabel="Delete forever"
+                    title={t('group.deleteConfirm')}
+                    body={t('group.deleteText')}
+                    confirmLabel={t('group.deleteBtn')}
                     danger
                     onConfirm={handleDelete}
                     onCancel={() => setConfirmDelete(false)}
@@ -396,13 +398,14 @@ export default function GroupSettingsPage() {
 
 /* ── Modal component ── */
 function Modal({ title, body, confirmLabel, danger, onConfirm, onCancel }) {
+    const { t } = useTranslation()
     return (
         <div style={m.overlay}>
             <div style={m.modal}>
                 <h3 style={m.title}>{title}</h3>
                 <p style={m.body}>{body}</p>
                 <div style={m.actions}>
-                    <button style={m.cancelBtn} onClick={onCancel}>Cancel</button>
+                    <button style={m.cancelBtn} onClick={onCancel}>{t('common.cancel')}</button>
                     <button style={danger ? m.dangerBtn : m.confirmBtn} onClick={onConfirm}>
                         {confirmLabel}
                     </button>

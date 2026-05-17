@@ -41,7 +41,7 @@ export default function ProfilePage() {
                 phone: res.data.phone || '',
                 birthDate: res.data.birthDate || ''
             })
-        } catch { setError('Failed to load profile') }
+        } catch { setError(t('profile.loadError', 'Failed to load profile')) }
         finally { setLoading(false) }
     }
 
@@ -50,10 +50,10 @@ export default function ProfilePage() {
         try {
             const res = await updateProfile(form)
             setProfile(res.data); updateUser(res.data)
-            setSuccess('Profile updated'); setEditMode(false)
+            setSuccess(t('profile.updated')); setEditMode(false)
             setTimeout(() => setSuccess(''), 3000)
         } catch (err) {
-            setError(err.response?.data?.message || 'Update failed')
+            setError(err.response?.data?.message || t('common.error'))
         } finally { setSaving(false) }
     }
 
@@ -63,7 +63,7 @@ export default function ProfilePage() {
         try {
             const res = await uploadAvatar(file)
             setProfile(res.data); updateUser(res.data)
-        } catch (err) { setError(err.response?.data?.message || 'Upload failed') }
+        } catch (err) { setError(err.response?.data?.message || t('common.error')) }
         finally { setAvatarLoading(false) }
     }
 
@@ -72,7 +72,7 @@ export default function ProfilePage() {
         try {
             const res = await deleteAvatar()
             setProfile(res.data); updateUser(res.data)
-        } catch { setError('Failed to remove photo') }
+        } catch { setError(t('profile.removePhotoError', 'Failed to remove photo')) }
         finally { setAvatarLoading(false) }
     }
 
@@ -92,12 +92,12 @@ export default function ProfilePage() {
             <header style={s.header}>
                 <button style={s.headerBtn} onClick={() => navigate('/chat')}>
                     <ArrowLeft size={16} />
-                    <span>Back</span>
+                    <span>{t('common.back')}</span>
                 </button>
-                <span style={s.headerTitle}>Profile</span>
+                <span style={s.headerTitle}>{t('profile.title')}</span>
                 <button style={s.logoutBtn} onClick={handleLogout}>
                     <LogOut size={14} />
-                    <span>Sign out</span>
+                    <span>{t('profile.signOut')}</span>
                 </button>
             </header>
 
@@ -141,7 +141,7 @@ export default function ProfilePage() {
                         <p style={s.avatarHandle}>@{profile?.username}</p>
                         <div style={s.onlinePill}>
                             <div style={s.onlineDot} />
-                            Online
+                            {t('common.online')}
                         </div>
                     </div>
 
@@ -159,12 +159,12 @@ export default function ProfilePage() {
                             <div style={s.cardIconWrap}>
                                 <User size={14} color="var(--accent)" />
                             </div>
-                            <span style={s.cardTitle}>Personal info</span>
+                            <span style={s.cardTitle}>{t('profile.personalInfo')}</span>
                         </div>
                         {!editMode ? (
                             <button style={s.editBtn} onClick={() => setEditMode(true)}>
                                 <Edit3 size={13} />
-                                Edit
+                                {t('profile.edit')}
                             </button>
                         ) : (
                             <div style={s.editActions}>
@@ -173,7 +173,7 @@ export default function ProfilePage() {
                                 </button>
                                 <button style={s.saveBtn} onClick={handleSave} disabled={saving}>
                                     {saving ? <div style={{ ...s.spinner, width: 14, height: 14 }} /> : <Check size={13} />}
-                                    {saving ? 'Saving' : 'Save'}
+                                    {saving ? t('profile.saving') : t('profile.save')}
                                 </button>
                             </div>
                         )}
@@ -181,59 +181,65 @@ export default function ProfilePage() {
 
                     <div style={s.fieldList}>
                         <Field
+                            t={t}
                             icon={<User size={14} color="var(--text-muted)" />}
-                            label="Full name"
+                            label={t('profile.fullName')}
                             editMode={editMode}
                             value={profile?.fullName}
                             inputValue={form.fullName}
                             onChange={v => setForm({ ...form, fullName: v })}
-                            placeholder="Your full name"
+                            placeholder={t('profile.fullName')}
                         />
                         <Field
+                            t={t}
                             icon={<AtSign size={14} color="var(--text-muted)" />}
-                            label="Username"
+                            label={t('profile.username')}
                             editMode={editMode}
                             value={`@${profile?.username}`}
                             inputValue={form.username}
                             onChange={v => setForm({ ...form, username: v })}
-                            placeholder="username"
+                            placeholder={t('profile.username')}
                         />
                         <Field
+                            t={t}
                             icon={<Mail size={14} color="var(--text-muted)" />}
-                            label="Email"
+                            label={t('profile.email')}
                             editMode={false}
                             value={profile?.email}
-                            badge={profile?.emailVerified ? 'Verified' : null}
+                            badge={profile?.emailVerified ? t('profile.verified') : null}
                         />
                         <Field
+                            t={t}
                             icon={<Phone size={14} color="var(--text-muted)" />}
-                            label="Phone"
+                            label={t('profile.phone')}
                             editMode={editMode}
                             value={profile?.phone}
                             inputValue={form.phone}
                             onChange={v => setForm({ ...form, phone: v })}
-                            placeholder="+7 700 000 00 00"
+                            placeholder={t('profile.phonePlaceholder')}
                             type="tel"
                         />
                         <Field
+                            t={t}
                             icon={<Calendar size={14} color="var(--text-muted)" />}
-                            label="Birthday"
+                            label={t('profile.birthDate')}
                             editMode={editMode}
                             value={profile?.birthDate
-                                ? new Date(profile.birthDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                                ? new Date(profile.birthDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
                                 : null}
                             inputValue={form.birthDate}
                             onChange={v => setForm({ ...form, birthDate: v })}
                             type="date"
                         />
                         <Field
+                            t={t}
                             icon={<FileText size={14} color="var(--text-muted)" />}
-                            label="Bio"
+                            label={t('profile.bio')}
                             editMode={editMode}
                             value={profile?.bio}
                             inputValue={form.bio}
                             onChange={v => setForm({ ...form, bio: v })}
-                            placeholder="Tell something about yourself..."
+                            placeholder={t('profile.bioPlaceholder')}
                             multiline
                             last
                         />
@@ -279,16 +285,18 @@ export default function ProfilePage() {
                             <div style={s.cardIconWrap}>
                                 <ShieldCheck size={14} color="var(--accent)" />
                             </div>
-                            <span style={s.cardTitle}>Security</span>
+                            <span style={s.cardTitle}>{t('profile.security')}</span>
                         </div>
                     </div>
                     <div style={s.securityList}>
                         <SecurityRow
-                            label="Email verified"
+                            t={t}
+                            label={t('profile.emailVerified')}
                             verified={profile?.emailVerified}
                         />
                         <SecurityRow
-                            label="Phone verified"
+                            t={t}
+                            label={t('profile.phoneVerified')}
                             verified={profile?.phoneVerified}
                             last
                         />
@@ -300,7 +308,7 @@ export default function ProfilePage() {
 }
 
 /* ── Sub-components ── */
-function Field({ icon, label, editMode, value, inputValue, onChange, placeholder, type = 'text', multiline, badge, last }) {
+function Field({ t, icon, label, editMode, value, inputValue, onChange, placeholder, type = 'text', multiline, badge, last }) {
     return (
         <div style={{
             ...sf.fieldRow,
@@ -330,7 +338,7 @@ function Field({ icon, label, editMode, value, inputValue, onChange, placeholder
                     )
                 ) : (
                     <span style={sf.fieldValue}>
-                        {value || <span style={sf.empty}>Not set</span>}
+                        {value || <span style={sf.empty}>{t('profile.notSet')}</span>}
                         {badge && <span style={sf.badge}><ShieldCheck size={10} /> {badge}</span>}
                     </span>
                 )}
@@ -339,7 +347,7 @@ function Field({ icon, label, editMode, value, inputValue, onChange, placeholder
     )
 }
 
-function SecurityRow({ label, verified, last }) {
+function SecurityRow({ t, label, verified, last }) {
     return (
         <div style={{
             ...sf.secRow,
@@ -358,7 +366,7 @@ function SecurityRow({ label, verified, last }) {
                 background: verified ? 'var(--success-bg)' : 'var(--bg-elevated)',
                 borderColor: verified ? 'rgba(16,185,129,0.2)' : 'var(--border)',
             }}>
-                {verified ? 'Verified' : 'Not verified'}
+                {verified ? t('profile.verified') : t('profile.notVerified')}
             </span>
         </div>
     )

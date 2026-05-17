@@ -6,15 +6,17 @@ import {
     Code, Globe, PenLine, Lightbulb, RotateCcw
 } from 'lucide-react'
 import { LangSwitcher } from '../components/LangSwitcher'
-
-const SUGGESTIONS = [
-    { icon: <Lightbulb size={14} />, text: 'How to improve productivity?' },
-    { icon: <PenLine size={14} />,   text: 'Write a professional introduction' },
-    { icon: <Globe size={14} />,     text: 'Translate text to English' },
-    { icon: <Code size={14} />,      text: 'Explain what REST API is' },
-]
+import { useTranslation } from 'react-i18next'
 
 export default function AiChatPage() {
+    const { t } = useTranslation()
+
+    const SUGGESTIONS = [
+        { icon: <Lightbulb size={14} />, text: t('ai.suggestions.productivity') },
+        { icon: <PenLine size={14} />,   text: t('ai.suggestions.letter') },
+        { icon: <Globe size={14} />,     text: t('ai.suggestions.translate') },
+        { icon: <Code size={14} />,      text: t('ai.suggestions.api') },
+    ]
     const navigate = useNavigate()
     const [messages, setMessages] = useState([])
     const [input, setInput] = useState('')
@@ -39,7 +41,7 @@ export default function AiChatPage() {
                 flat.push({ role: 'ai',   text: item.aiResponse,  id: item.id + '_a', createdAt: item.createdAt })
             })
             setMessages(flat)
-        } catch { setError('Failed to load history') }
+        } catch { setError(t('ai.historyError', 'Failed to load history')) }
         finally { setHistLoading(false) }
     }
 
@@ -65,7 +67,7 @@ export default function AiChatPage() {
 
     const handleClear = async () => {
         try { await clearAiHistory(); setMessages([]); setShowClearConfirm(false) }
-        catch { setError('Failed to clear history') }
+        catch { setError(t('ai.clearError', 'Failed to clear history')) }
     }
 
     const handleKeyDown = (e) => {
@@ -99,7 +101,7 @@ export default function AiChatPage() {
             <header style={as.header}>
                 <button style={as.backBtn} onClick={() => navigate('/chat')}>
                     <ArrowLeft size={16} />
-                    Back
+                    {t('common.back')}
                 </button>
 
                 <div style={as.headerCenter}>
@@ -107,10 +109,10 @@ export default function AiChatPage() {
                         <Bot size={18} color="#6366f1" />
                     </div>
                     <div>
-                        <div style={as.botName}>JoBot</div>
+                        <div style={as.botName}>{t('ai.title')}</div>
                         <div style={as.botStatus}>
                             <Sparkles size={10} />
-                            AI Assistant · Gemini
+                            {t('ai.subtitle')}
                         </div>
                     </div>
                 </div>
@@ -118,7 +120,7 @@ export default function AiChatPage() {
                 <button
                     style={as.clearBtn}
                     onClick={() => setShowClearConfirm(true)}
-                    title="Clear history"
+                    title={t('ai.clear')}
                     disabled={messages.length === 0}
                 >
                     <Trash2 size={15} />
@@ -134,10 +136,9 @@ export default function AiChatPage() {
                         <div style={as.welcomeAvatar}>
                             <Bot size={32} color="#6366f1" />
                         </div>
-                        <h2 style={as.welcomeTitle}>Hi, I'm JoBot</h2>
+                        <h2 style={as.welcomeTitle}>{t('ai.greeting')}</h2>
                         <p style={as.welcomeSubtitle}>
-                            Your AI assistant inside JoChat.<br />
-                            Ask me anything — I'm here to help.
+                            {t('ai.greetingText')}
                         </p>
                         <div style={as.suggestionGrid}>
                             {SUGGESTIONS.map((s, i) => (
@@ -157,7 +158,7 @@ export default function AiChatPage() {
                 {histLoading && (
                     <div style={as.centered}>
                         <div style={as.spinner} />
-                        <span style={as.loadingText}>Loading history...</span>
+                        <span style={as.loadingText}>{t('ai.loading')}</span>
                     </div>
                 )}
 
@@ -228,7 +229,7 @@ export default function AiChatPage() {
                     <div style={as.errorMsg}>
                         <RotateCcw size={13} />
                         {error}
-                        <button style={as.retryBtn} onClick={() => setError('')}>Dismiss</button>
+                        <button style={as.retryBtn} onClick={() => setError('')}>{t('ai.dismiss')}</button>
                     </div>
                 )}
 
@@ -244,7 +245,7 @@ export default function AiChatPage() {
                         value={input}
                         onChange={e => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Ask JoBot anything..."
+                        placeholder={t('ai.placeholder')}
                         rows={1}
                         disabled={loading}
                     />
@@ -266,11 +267,11 @@ export default function AiChatPage() {
             {showClearConfirm && (
                 <div style={as.overlay}>
                     <div style={as.modal}>
-                        <h3 style={as.modalTitle}>Clear conversation?</h3>
-                        <p style={as.modalBody}>All messages with JoBot will be permanently deleted.</p>
+                        <h3 style={as.modalTitle}>{t('ai.clearConfirm')}</h3>
+                        <p style={as.modalBody}>{t('ai.clearText')}</p>
                         <div style={as.modalActions}>
-                            <button style={as.modalCancel} onClick={() => setShowClearConfirm(false)}>Cancel</button>
-                            <button style={as.modalConfirm} onClick={handleClear}>Clear</button>
+                            <button style={as.modalCancel} onClick={() => setShowClearConfirm(false)}>{t('common.cancel')}</button>
+                            <button style={as.modalConfirm} onClick={handleClear}>{t('common.delete')}</button>
                         </div>
                     </div>
                 </div>

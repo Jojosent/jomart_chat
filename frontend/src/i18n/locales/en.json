@@ -22,7 +22,17 @@
     "otpPlaceholder": "000000",
     "confirmTitle": "Confirmation",
     "loginFailed": "Login failed. Check your credentials.",
-    "registerFailed": "Registration failed"
+    "registerFailed": "Registration failed",
+    "welcomeBack": "Welcome back",
+    "loginSubtitle": "Sign in to continue your conversations",
+    "createAccount": "Create account",
+    "registerSubtitle": "Join and start messaging instantly",
+    "checkEmail": "Check your email",
+    "codeSentTo": "We sent a 6-digit code to",
+    "verifyCode": "Verify code",
+    "changeEmail": "Change email",
+    "createOne": "Create one",
+    "emailAddress": "Email address"
   },
   "chat": {
     "title": "Chats",
@@ -48,7 +58,17 @@
     "createGroup": "Create group",
     "aiAssistant": "AI Assistant",
     "profile": "Profile",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "findPeople": "Find people",
+    "messages": "Messages",
+    "searchOrFind": "Search or find people...",
+    "noConversations": "No conversations",
+    "searchSomeone": "Search for someone to start chatting",
+    "selectConversation": "Select a conversation",
+    "orSearchMessage": "or search for someone to message",
+    "attachFile": "Attach file",
+    "stickers": "Stickers",
+    "profanityWarn": "Inappropriate words will be filtered"
   },
   "group": {
     "new": "New Group",
@@ -91,7 +111,11 @@
     "updated": "Group updated!",
     "avatarUpdated": "Avatar updated!",
     "added": "added!",
-    "removed": "removed"
+    "removed": "removed",
+    "noDescription": "No description",
+    "loadError": "Failed to load group",
+    "nameError": "Enter group name",
+    "adminTransferred": "Admin transferred to"
   },
   "profile": {
     "title": "Profile",
@@ -117,7 +141,13 @@
     "updated": "Profile updated successfully!",
     "phonePlaceholder": "+7 777 000 00 00",
     "bioPlaceholder": "Tell about yourself...",
-    "bioMax": "Max 200 characters"
+    "bioMax": "Max 200 characters",
+    "personalInfo": "Personal info",
+    "notSet": "Not set",
+    "notVerified": "Not verified",
+    "signOut": "Sign out",
+    "loadError": "Failed to load profile",
+    "removePhotoError": "Failed to remove photo"
   },
   "notifications": {
     "title": "Notifications",
@@ -130,14 +160,19 @@
     "newMessage": "New message",
     "groupInvite": "Group invitation",
     "groupRemoved": "Removed from group",
-    "adminTransferred": "You are now admin"
+    "adminTransferred": "You are now admin",
+    "allCaughtUp": "You're all caught up",
+    "accept": "Accept",
+    "decline": "Decline",
+    "accepted": "Accepted",
+    "declined": "Declined"
   },
   "ai": {
     "title": "JoBot",
     "subtitle": "AI Assistant · Gemini",
-    "greeting": "Hi! I'm JoBot",
-    "greetingText": "Your AI assistant inside JoChat. I can help with questions, translation, writing and much more.",
-    "placeholder": "Ask JoBot something...",
+    "greeting": "Hi, I'm JoBot",
+    "greetingText": "Your AI assistant inside JoChat. Ask me anything — I'm here to help.",
+    "placeholder": "Ask JoBot anything...",
     "clear": "Clear history",
     "loading": "Loading history...",
     "suggestions": {
@@ -146,7 +181,13 @@
       "translate": "🌐 Translate text to English",
       "api": "💻 Explain what REST API is"
     },
-    "error": "Failed to get response"
+    "error": "Failed to get response",
+    "clearConfirm": "Clear conversation?",
+    "clearText": "All messages with JoBot will be permanently deleted.",
+    "retry": "Retry",
+    "dismiss": "Dismiss",
+    "historyError": "Failed to load history",
+    "clearError": "Failed to clear history"
   },
   "translate": {
     "btn": "Translate",
@@ -158,7 +199,7 @@
     "kk": "Kazakh"
   },
   "common": {
-    "back": "← Back",
+    "back": "Back",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
@@ -175,7 +216,15 @@
     "search": "Search",
     "noResults": "No results",
     "connected": "● Connected",
-    "reconnecting": "○ Reconnecting..."
+    "reconnecting": "○ Reconnecting...",
+    "live": "Live",
+    "searching": "Searching...",
+    "tryDifferent": "Try a different name or username",
+    "forward": "Forward",
+    "role": "Role",
+    "status": "Status",
+    "actions": "Actions",
+    "type": "Type"
   },
   "lang": {
     "select": "Language",
@@ -185,12 +234,94 @@
   },
   "admin": {
     "title": "Admin Panel",
+    "subtitle": "JoChat Control Center",
     "users": "Users",
     "groups": "Groups",
+    "messages": "Messages",
+    "dashboard": "Dashboard",
+    "userManagement": "User Management",
+    "groupManagement": "Group Management",
+    "messagesChats": "Messages & Chats",
+    "overview": "Overview of your JoChat platform",
+    "manageAccounts": "Manage accounts, roles and permissions",
+    "monitorGroups": "Monitor and manage all groups",
+    "moderateMessages": "View and moderate chat messages",
+    "refresh": "Refresh",
+    "allSystemsOk": "All Systems Operational",
+    "totalUsers": "Total Users",
+    "onlineNow": "Online Now",
+    "totalGroups": "Total Groups",
+    "admins": "Admins",
+    "systemStatus": "System Status",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "allRoles": "All Roles",
+    "allStatus": "All Status",
     "deleteUser": "Delete User",
     "deleteGroup": "Delete Group",
-    "toggleRole": "Toggle Role",
     "confirmDeleteUser": "Are you sure you want to delete this user?",
-    "confirmDeleteGroup": "Are you sure you want to delete this group?"
+    "confirmDeleteGroup": "Are you sure you want to delete this group?",
+    "userDetails": "User Details",
+    "groupDetails": "Group Details",
+    "chatDetails": "Chat Details",
+    "viewMessages": "View messages",
+    "noMessages": "No messages",
+    "deleteMessage": "Delete Message",
+    "confirmDeleteMessage": "Are you sure you want to delete this message?",
+    "promoteAdmin": "Promote to Admin",
+    "demoteUser": "Demote to User",
+    "statsError": "Failed to load statistics",
+    "backToProfile": "Back to Profile",
+    "loadingStats": "Loading statistics...",
+    "userOverview": "User Overview",
+    "loadUsersError": "Failed to load users",
+    "roleUpdateError": "Failed to update role",
+    "deleteUserError": "Failed to delete user",
+    "loadingUsers": "Loading users...",
+    "created": "Created",
+    "smallGroup": "Small group",
+    "mediumGroup": "Medium group",
+    "largeGroup": "Large group",
+    "loadGroupsError": "Failed to load groups",
+    "deleteGroupError": "Failed to delete group",
+    "loadingGroups": "Loading groups...",
+    "shown": "Shown",
+    "avgSize": "Avg Size",
+    "loadChatsError": "Failed to load chats",
+    "deleteMessageError": "Failed to delete message",
+    "loadingChats": "Loading chats...",
+    "endpointRequired": "Backend Endpoint Required",
+    "endpointDesc": "This tab needs additional backend endpoints to work. Add these to your",
+    "retryAfterAdding": "Retry after adding endpoints",
+    "allTypes": "All Types",
+    "privateType": "Private",
+    "groupType": "Group",
+    "activeUsers": "active users",
+    "fullAccess": "with full access",
+    "totalMembers": "total members"
+  },
+  "attachment": {
+    "photoVideo": "Photo or Video",
+    "document": "Document"
+  },
+  "stickers": {
+    "faces": "Emotions",
+    "gestures": "Gestures",
+    "animals": "Animals",
+    "food": "Food",
+    "travel": "Travel"
+  },
+  "theme": {
+    "light": "Switch to light mode",
+    "dark": "Switch to dark mode"
+  },
+  "media": {
+    "hint": "Scroll to zoom · Drag to pan · R to rotate · Esc to close"
+  },
+  "camera": {
+    "title": "Camera",
+    "starting": "Starting camera...",
+    "error": "Could not access camera. Please check permissions.",
+    "retake": "Retake"
   }
 }

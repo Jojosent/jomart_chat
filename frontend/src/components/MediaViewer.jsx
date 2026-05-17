@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Download, Forward, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export default function MediaViewer({ media, blobUrl, onClose, onForward }) {
+    const { t } = useTranslation()
     const [zoom, setZoom] = useState(1)
     const [rotate, setRotate] = useState(0)
     const [dragging, setDragging] = useState(false)
@@ -115,7 +117,7 @@ export default function MediaViewer({ media, blobUrl, onClose, onForward }) {
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                         letterSpacing: '-0.01em',
                     }}>
-                        {media.fileName || 'Photo'}
+                        {media.fileName || t('common.type')}
                     </span>
                     {media.fileSize && (
                         <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px' }}>
@@ -150,14 +152,14 @@ export default function MediaViewer({ media, blobUrl, onClose, onForward }) {
                     <Btn
                         icon={<Forward size={17} />}
                         onClick={handleForwardClick}
-                        title="Forward"
+                        title={t('common.forward')}
                         color="#818cf8"
                         hoverBg="rgba(99,102,241,0.2)"
                     />
                     <Btn
                         icon={<Download size={17} />}
                         onClick={handleDownload}
-                        title="Download"
+                        title={t('common.download', 'Download')}
                     />
 
                     <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', margin: '0 4px' }} />
@@ -165,7 +167,7 @@ export default function MediaViewer({ media, blobUrl, onClose, onForward }) {
                     <Btn
                         icon={<X size={17} />}
                         onClick={handleClose}
-                        title="Close (Esc)"
+                        title={t('common.close')}
                         color="#f87171"
                         hoverBg="rgba(239,68,68,0.2)"
                     />
@@ -226,7 +228,7 @@ export default function MediaViewer({ media, blobUrl, onClose, onForward }) {
                 flexShrink: 0,
             }}>
                 <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', letterSpacing: '0.03em' }}>
-                    Scroll to zoom · Drag to pan · R to rotate · Esc to close
+                    {t('media.hint', 'Scroll to zoom · Drag to pan · R to rotate · Esc to close')}
                 </span>
                 {(zoom !== 1 || rotate !== 0) && (
                     <button
@@ -239,7 +241,7 @@ export default function MediaViewer({ media, blobUrl, onClose, onForward }) {
                         }}
                         onClick={handleReset}
                     >
-                        Reset
+                        {t('common.reset', 'Reset')}
                     </button>
                 )}
             </div>

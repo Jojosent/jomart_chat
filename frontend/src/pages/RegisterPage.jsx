@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { registerUser, verifyOtp, resendOtp } from '../api/auth'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Lock, User, AtSign, ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { LangSwitcher } from '../components/LangSwitcher'
 
 export default function RegisterPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [step, setStep] = useState('register')
   const [email, setEmail] = useState('')
@@ -104,13 +107,16 @@ export default function RegisterPage() {
             </svg>
           </div>
           <span style={s.logoText}>JoChat</span>
+          <div style={{ marginLeft: 'auto', width: '100px' }}>
+            <LangSwitcher />
+          </div>
         </div>
 
         {step === 'register' ? (
           <>
             <div style={s.heading}>
-              <h1 style={s.title}>Create account</h1>
-              <p style={s.subtitle}>Join and start messaging instantly</p>
+              <h1 style={s.title}>{t('auth.createAccount')}</h1>
+              <p style={s.subtitle}>{t('auth.registerSubtitle')}</p>
             </div>
 
             {error && (
@@ -123,13 +129,13 @@ export default function RegisterPage() {
             <form onSubmit={handleRegister} style={s.form}>
               {/* Full Name */}
               <div style={s.fieldGroup}>
-                <label style={s.label}>Full name</label>
+                <label style={s.label}>{t('auth.fullName')}</label>
                 <div style={s.inputWrap}>
                   <User size={15} color="var(--text-muted)" style={s.inputIcon} />
                   <input
                     style={s.input}
                     name="fullName"
-                    placeholder="Jane Smith"
+                    placeholder={t('auth.enterFullName')}
                     value={form.fullName}
                     onChange={handleChange}
                     required
@@ -139,13 +145,13 @@ export default function RegisterPage() {
 
               {/* Username */}
               <div style={s.fieldGroup}>
-                <label style={s.label}>Username</label>
+                <label style={s.label}>{t('auth.username')}</label>
                 <div style={s.inputWrap}>
                   <AtSign size={15} color="var(--text-muted)" style={s.inputIcon} />
                   <input
                     style={s.input}
                     name="username"
-                    placeholder="jane_smith"
+                    placeholder={t('auth.enterUsername')}
                     value={form.username}
                     onChange={handleChange}
                     required
@@ -155,14 +161,14 @@ export default function RegisterPage() {
 
               {/* Email */}
               <div style={s.fieldGroup}>
-                <label style={s.label}>Email address</label>
+                <label style={s.label}>{t('auth.emailAddress')}</label>
                 <div style={s.inputWrap}>
                   <Mail size={15} color="var(--text-muted)" style={s.inputIcon} />
                   <input
                     style={s.input}
                     name="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder={t('auth.enterEmail')}
                     value={form.email}
                     onChange={handleChange}
                     required
@@ -172,14 +178,14 @@ export default function RegisterPage() {
 
               {/* Password */}
               <div style={s.fieldGroup}>
-                <label style={s.label}>Password</label>
+                <label style={s.label}>{t('auth.password')}</label>
                 <div style={s.inputWrap}>
                   <Lock size={15} color="var(--text-muted)" style={s.inputIcon} />
                   <input
                     style={{ ...s.input, paddingRight: '44px' }}
                     name="password"
                     type={showPass ? 'text' : 'password'}
-                    placeholder="Min. 6 characters"
+                    placeholder={t('auth.enterPassword')}
                     value={form.password}
                     onChange={handleChange}
                     required
@@ -194,13 +200,13 @@ export default function RegisterPage() {
               </div>
 
               <button style={s.submitBtn} type="submit" disabled={loading}>
-                {loading ? <span style={s.spinner} /> : <>Create account <ArrowRight size={16} /></>}
+                {loading ? <span style={s.spinner} /> : <>{t('auth.registerBtn')} <ArrowRight size={16} /></>}
               </button>
             </form>
 
             <p style={s.switchText}>
-              Already have an account?{' '}
-              <span style={s.switchLink} onClick={() => navigate('/login')}>Sign in</span>
+              {t('auth.haveAccount')}{' '}
+              <span style={s.switchLink} onClick={() => navigate('/login')}>{t('auth.loginBtn')}</span>
             </p>
           </>
         ) : (
@@ -210,9 +216,9 @@ export default function RegisterPage() {
               <div style={s.shieldIcon}>
                 <ShieldCheck size={22} color="var(--accent)" />
               </div>
-              <h1 style={s.title}>Check your email</h1>
+              <h1 style={s.title}>{t('auth.checkEmail')}</h1>
               <p style={s.subtitle}>
-                We sent a 6-digit code to{' '}
+                {t('auth.codeSentTo')}{' '}
                 <span style={{ color: 'var(--text-accent)', fontWeight: '600' }}>{email}</span>
               </p>
             </div>
@@ -258,18 +264,18 @@ export default function RegisterPage() {
                 type="submit"
                 disabled={loading || otp.join('').length < 6}
               >
-                {loading ? <span style={s.spinner} /> : <>Verify code <ArrowRight size={16} /></>}
+                {loading ? <span style={s.spinner} /> : <>{t('auth.verifyCode')} <ArrowRight size={16} /></>}
               </button>
             </form>
 
             <div style={s.resendRow}>
               <button style={s.backBtn} onClick={() => { setStep('register'); setOtp(['', '', '', '', '', '']) }}>
-                ← Change email
+                ← {t('auth.changeEmail')}
               </button>
               {countdown > 0 ? (
-                <span style={s.countdown}>Resend in {countdown}s</span>
+                <span style={s.countdown}>{t('auth.otpResendIn')} {countdown}s</span>
               ) : (
-                <span style={s.switchLink} onClick={handleResend}>Resend code</span>
+                <span style={s.switchLink} onClick={handleResend}>{t('auth.otpResend')}</span>
               )}
             </div>
           </>

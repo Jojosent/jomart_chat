@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Download, FileText, Film, Image } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import MediaViewer from './MediaViewer'
 
 function useAuthBlob(url) {
@@ -43,6 +44,7 @@ function useAuthBlob(url) {
 }
 
 export default function MediaMessage({ media, isMine, onForward }) {
+    const { t } = useTranslation()
     const { blobUrl, loading, error } = useAuthBlob(media?.viewUrl)
     const [showViewer, setShowViewer] = useState(false)
 
@@ -101,7 +103,7 @@ export default function MediaMessage({ media, isMine, onForward }) {
                             color: 'var(--text-muted)', fontSize: '13px',
                         }}>
                             <Image size={24} />
-                            <span>Failed to load</span>
+                            <span>{t('common.error')}</span>
                         </div>
                     )}
                     {blobUrl && (
@@ -164,7 +166,7 @@ export default function MediaMessage({ media, isMine, onForward }) {
                         color: 'var(--text-muted)', fontSize: '13px',
                     }}>
                         <Film size={24} />
-                        <span>Failed to load</span>
+                        <span>{t('common.error')}</span>
                     </div>
                 )}
                 {blobUrl && (
@@ -205,7 +207,7 @@ export default function MediaMessage({ media, isMine, onForward }) {
                     fontSize: '13px', fontWeight: '600', color: textColor,
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>
-                    {media.fileName || 'File'}
+                    {media.fileName || t('common.type')}
                 </div>
                 <div style={{ fontSize: '11px', color: mutedColor, marginTop: '2px' }}>
                     {formatSize(media.fileSize)}

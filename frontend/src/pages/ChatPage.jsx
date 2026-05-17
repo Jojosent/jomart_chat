@@ -4,6 +4,7 @@ import { uploadMedia } from '../api/media'
 import useWebSocket from '../hooks/useWebSocket'
 import useAuthStore from '../store/authStore'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import CreateGroupModal from '../components/CreateGroupModal'
 import MessageTicks from '../components/MessageTicks'
 import { NotificationPanel } from '../components/NotificationPanel'
@@ -27,6 +28,7 @@ import {
 } from 'lucide-react'
 
 export default function ChatPage() {
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const me = useAuthStore((s) => s.user)
 
@@ -308,7 +310,7 @@ export default function ChatPage() {
             // UI обновится через WebSocket, но можно и сразу для скорости:
             setMessages(prev => prev.map(m =>
                 m.id === msgId
-                    ? { ...m, deleted: true, content: 'Сообщение удалено' }
+                    ? { ...m, deleted: true, content: t('chat.deleted') }
                     : m
             ))
         } catch (err) {
@@ -446,7 +448,7 @@ export default function ChatPage() {
                             <button style={s.backBtn} onClick={() => setSearchMode(false)}>
                                 <X size={16} />
                             </button>
-                            <span style={s.searchTopTitle}>Find people</span>
+                            <span style={s.searchTopTitle}>{t('chat.findPeople')}</span>
                         </div>
                     )}
                 </div>
@@ -463,7 +465,7 @@ export default function ChatPage() {
                                 ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)',
                         }}>
                             <Circle size={6} fill="currentColor" />
-                            {connected ? 'Live' : 'Reconnecting'}
+                            {connected ? t('common.live') : t('common.reconnecting')}
                         </div>
                     </div>
                 )}
@@ -475,7 +477,7 @@ export default function ChatPage() {
                             onClick={() => setSearchMode(true)}>
                             <Search size={14} color="var(--text-muted)" />
                             <span style={s.searchPlaceholder}>
-                                Search or find people...
+                                {t('chat.searchOrFind')}
                             </span>
                         </button>
                         <button style={s.newChatBtn}
@@ -502,7 +504,7 @@ export default function ChatPage() {
                     ) : (
                         <>
                             <div style={s.sectionLabel}>
-                                <span>Messages</span>
+                                <span>{t('chat.messages')}</span>
                                 <span style={s.sectionCount}>{chats.length}</span>
                             </div>
 
@@ -533,9 +535,9 @@ export default function ChatPage() {
                                         <MessageSquare size={24}
                                             color="var(--text-muted)" />
                                     </div>
-                                    <p style={s.emptyTitle}>No conversations</p>
+                                    <p style={s.emptyTitle}>{t('chat.noConversations')}</p>
                                     <p style={s.emptyHint}>
-                                        Search for someone to start chatting
+                                        {t('chat.searchSomeone')}
                                     </p>
                                 </div>
                             ) : (
@@ -664,9 +666,9 @@ export default function ChatPage() {
                             <MessageSquare size={32} color="var(--text-muted)"
                                 strokeWidth={1.5} />
                         </div>
-                        <p style={s.noChatTitle}>Select a conversation</p>
+                        <p style={s.noChatTitle}>{t('chat.selectConversation')}</p>
                         <p style={s.noChatSub}>
-                            or search for someone to message
+                            {t('chat.orSearchMessage')}
                         </p>
                     </div>
                 ) : (
@@ -702,13 +704,13 @@ export default function ChatPage() {
                                     <div style={s.headerSub}>
                                         {isTyping
                                             ? <span style={{ color: 'var(--accent-light)' }}>
-                                                typing...
+                                                {t('chat.typing')}
                                             </span>
                                             : getChatStatus(activeChat) === 'ONLINE'
                                                 ? <span style={{ color: 'var(--success)' }}>
-                                                    Online
+                                                    {t('common.online')}
                                                 </span>
-                                                : <span>Offline</span>
+                                                : <span>{t('common.offline')}</span>
                                         }
                                     </div>
                                 </div>
@@ -762,7 +764,7 @@ export default function ChatPage() {
                                                 <button
                                                     style={s.forwardHoverBtn}
                                                     onClick={() => setForwardMsgId(msg.id)}
-                                                    title="Forward"
+                                                    title={t('common.forward')}
                                                 >
                                                     <Forward size={13} />
                                                 </button>
@@ -770,7 +772,7 @@ export default function ChatPage() {
                                                     <button
                                                         style={s.deleteHoverBtn}
                                                         onClick={() => handleDeleteMsg(msg.id)}
-                                                        title="Delete"
+                                                        title={t('common.delete')}
                                                     >
                                                         <Trash2 size={13} />
                                                     </button>
@@ -948,7 +950,7 @@ export default function ChatPage() {
                                         setShowAttachment(p => !p)
                                         setShowSticker(false)
                                     }}
-                                    title="Attach file"
+                                    title={t('chat.attachFile')}
                                 >
                                     <Paperclip size={18} />
                                 </button>
@@ -970,12 +972,12 @@ export default function ChatPage() {
                                     value={input}
                                     onChange={e => setInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    placeholder="Write a message..."
+                                    placeholder={t('chat.typeMessage')}
                                     rows={1}
                                 />
                                 {hasProfanity(input) && (
                                     <div style={s.profanityWarn}>
-                                        Inappropriate words will be filtered
+                                        {t('chat.profanityWarn')}
                                     </div>
                                 )}
                             </div>
@@ -994,7 +996,7 @@ export default function ChatPage() {
                                         setShowSticker(p => !p)
                                         setShowAttachment(false)
                                     }}
-                                    title="Stickers"
+                                    title={t('chat.stickers')}
                                 >
                                     <Smile size={18} />
                                 </button>

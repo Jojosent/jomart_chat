@@ -22,7 +22,17 @@
     "otpPlaceholder": "000000",
     "confirmTitle": "Подтверждение",
     "loginFailed": "Ошибка входа. Проверьте ваши данные.",
-    "registerFailed": "Ошибка регистрации"
+    "registerFailed": "Ошибка регистрации",
+    "welcomeBack": "С возвращением",
+    "loginSubtitle": "Войдите, чтобы продолжить общение",
+    "createAccount": "Создать аккаунт",
+    "registerSubtitle": "Присоединяйтесь и начните общаться мгновенно",
+    "checkEmail": "Проверьте вашу почту",
+    "codeSentTo": "Мы отправили 6-значный код на",
+    "verifyCode": "Подтвердить код",
+    "changeEmail": "Изменить почту",
+    "createOne": "Создать",
+    "emailAddress": "Электронная почта"
   },
   "chat": {
     "title": "Чаты",
@@ -48,7 +58,17 @@
     "createGroup": "Создать группу",
     "aiAssistant": "ИИ Ассистент",
     "profile": "Профиль",
-    "notifications": "Уведомления"
+    "notifications": "Уведомления",
+    "findPeople": "Найти людей",
+    "messages": "Сообщения",
+    "searchOrFind": "Поиск или поиск людей...",
+    "noConversations": "Нет переписок",
+    "searchSomeone": "Найдите кого-нибудь, чтобы начать чат",
+    "selectConversation": "Выберите переписку",
+    "orSearchMessage": "или найдите кого-нибудь для сообщения",
+    "attachFile": "Прикрепить файл",
+    "stickers": "Стикеры",
+    "profanityWarn": "Нецензурные слова будут отфильтрованы"
   },
   "group": {
     "new": "Новая группа",
@@ -91,7 +111,11 @@
     "updated": "Группа обновлена!",
     "avatarUpdated": "Аватар обновлен!",
     "added": "добавлен(а)!",
-    "removed": "удален(а)"
+    "removed": "удален(а)",
+    "noDescription": "Нет описания",
+    "loadError": "Не удалось загрузить группу",
+    "nameError": "Введите название группы",
+    "adminTransferred": "Права администратора переданы"
   },
   "profile": {
     "title": "Профиль",
@@ -117,7 +141,13 @@
     "updated": "Профиль успешно обновлен!",
     "phonePlaceholder": "+7 777 000 00 00",
     "bioPlaceholder": "Расскажите о себе...",
-    "bioMax": "Макс. 200 символов"
+    "bioMax": "Макс. 200 символов",
+    "personalInfo": "Личная информация",
+    "notSet": "Не указано",
+    "notVerified": "Не подтверждено",
+    "signOut": "Выйти",
+    "loadError": "Не удалось загрузить профиль",
+    "removePhotoError": "Не удалось удалить фото"
   },
   "notifications": {
     "title": "Уведомления",
@@ -130,13 +160,18 @@
     "newMessage": "Новое сообщение",
     "groupInvite": "Приглашение в группу",
     "groupRemoved": "Вас удалили из группы",
-    "adminTransferred": "Теперь вы администратор"
+    "adminTransferred": "Теперь вы администратор",
+    "allCaughtUp": "Все уведомления прочитаны",
+    "accept": "Принять",
+    "decline": "Отклонить",
+    "accepted": "Принято",
+    "declined": "Отклонено"
   },
   "ai": {
     "title": "JoBot",
     "subtitle": "ИИ Ассистент · Gemini",
-    "greeting": "Привет! Я JoBot",
-    "greetingText": "Ваш ИИ помощник внутри JoChat. Я могу помочь с вопросами, переводом, написанием текстов и многим другим.",
+    "greeting": "Привет, я JoBot",
+    "greetingText": "Ваш ИИ помощник внутри JoChat. Спрашивайте меня о чем угодно — я здесь, чтобы помочь.",
     "placeholder": "Спросите JoBot о чем-нибудь...",
     "clear": "Очистить историю",
     "loading": "Загрузка истории...",
@@ -146,7 +181,13 @@
       "translate": "🌐 Перевести текст на английский",
       "api": "💻 Объясни, что такое REST API"
     },
-    "error": "Не удалось получить ответ"
+    "error": "Не удалось получить ответ",
+    "clearConfirm": "Очистить переписку?",
+    "clearText": "Все сообщения с JoBot будут удалены навсегда.",
+    "retry": "Повторить",
+    "dismiss": "Закрыть",
+    "historyError": "Не удалось загрузить историю",
+    "clearError": "Не удалось очистить историю"
   },
   "translate": {
     "btn": "Перевести",
@@ -158,7 +199,7 @@
     "kk": "Казахский"
   },
   "common": {
-    "back": "← Назад",
+    "back": "Назад",
     "loading": "Загрузка...",
     "error": "Ошибка",
     "success": "Успешно",
@@ -175,7 +216,15 @@
     "search": "Поиск",
     "noResults": "Нет результатов",
     "connected": "● Подключено",
-    "reconnecting": "○ Переподключение..."
+    "reconnecting": "○ Переподключение...",
+    "live": "В сети",
+    "searching": "Поиск...",
+    "tryDifferent": "Попробуйте другое имя или имя пользователя",
+    "forward": "Переслать",
+    "role": "Роль",
+    "status": "Статус",
+    "actions": "Действия",
+    "type": "Тип"
   },
   "lang": {
     "select": "Язык",
@@ -184,13 +233,95 @@
     "kk": "Қазақша"
   },
   "admin": {
-    "title": "Панель администратора",
+    "title": "Админ панель",
+    "subtitle": "Центр управления JoChat",
     "users": "Пользователи",
     "groups": "Группы",
+    "messages": "Сообщения",
+    "dashboard": "Дашборд",
+    "userManagement": "Управление пользователями",
+    "groupManagement": "Управление группами",
+    "messagesChats": "Сообщения и чаты",
+    "overview": "Обзор вашей платформы JoChat",
+    "manageAccounts": "Управление аккаунтами, ролями и разрешениями",
+    "monitorGroups": "Мониторинг и управление всеми группами",
+    "moderateMessages": "Просмотр и модерация сообщений чата",
+    "refresh": "Обновить",
+    "allSystemsOk": "Все системы работают",
+    "totalUsers": "Всего пользователей",
+    "onlineNow": "Сейчас в сети",
+    "totalGroups": "Всего групп",
+    "admins": "Админы",
+    "systemStatus": "Статус системы",
+    "verified": "Подтвержден",
+    "unverified": "Не подтвержден",
+    "allRoles": "Все роли",
+    "allStatus": "Все статусы",
     "deleteUser": "Удалить пользователя",
     "deleteGroup": "Удалить группу",
-    "toggleRole": "Изменить роль",
     "confirmDeleteUser": "Вы уверены, что хотите удалить этого пользователя?",
-    "confirmDeleteGroup": "Вы уверены, что хотите удалить эту группу?"
+    "confirmDeleteGroup": "Вы уверены, что хотите удалить эту группу?",
+    "userDetails": "Данные пользователя",
+    "groupDetails": "Данные группы",
+    "chatDetails": "Данные чата",
+    "viewMessages": "Показать сообщения",
+    "noMessages": "Нет сообщений",
+    "deleteMessage": "Удалить сообщение",
+    "confirmDeleteMessage": "Вы уверены, что хотите удалить это сообщение?",
+    "promoteAdmin": "Назначить админом",
+    "demoteUser": "Снять права админа",
+    "statsError": "Не удалось загрузить статистику",
+    "backToProfile": "Вернуться в профиль",
+    "loadingStats": "Загрузка статистики...",
+    "userOverview": "Обзор пользователей",
+    "loadUsersError": "Не удалось загрузить пользователей",
+    "roleUpdateError": "Не удалось обновить роль",
+    "deleteUserError": "Не удалось удалить пользователя",
+    "loadingUsers": "Загрузка пользователей...",
+    "created": "Создан",
+    "smallGroup": "Малая группа",
+    "mediumGroup": "Средняя группа",
+    "largeGroup": "Большая группа",
+    "loadGroupsError": "Не удалось загрузить группы",
+    "deleteGroupError": "Не удалось удалить группу",
+    "loadingGroups": "Загрузка групп...",
+    "shown": "Показано",
+    "avgSize": "Средний размер",
+    "loadChatsError": "Не удалось загрузить чаты",
+    "deleteMessageError": "Не удалось удалить сообщение",
+    "loadingChats": "Загрузка чатов...",
+    "endpointRequired": "Требуется эндпоинт бэкенда",
+    "endpointDesc": "Этой вкладке требуются дополнительные эндпоинты бэкенда. Добавьте их в ваш",
+    "retryAfterAdding": "Повторить после добавления",
+    "allTypes": "Все типы",
+    "privateType": "Приватный",
+    "groupType": "Групповой",
+    "activeUsers": "активных пользователей",
+    "fullAccess": "с полным доступом",
+    "totalMembers": "всего участников"
+  },
+  "attachment": {
+    "photoVideo": "Фото или Видео",
+    "document": "Документ"
+  },
+  "stickers": {
+    "faces": "Эмоции",
+    "gestures": "Жесты",
+    "animals": "Животные",
+    "food": "Еда",
+    "travel": "Путешествия"
+  },
+  "theme": {
+    "light": "Светлая тема",
+    "dark": "Темная тема"
+  },
+  "media": {
+    "hint": "Колесо: зум · Тянуть: панорама · R: поворот · Esc: закрыть"
+  },
+  "camera": {
+    "title": "Камера",
+    "starting": "Запуск камеры...",
+    "error": "Не удалось получить доступ к камере. Проверьте разрешения.",
+    "retake": "Переснять"
   }
 }
